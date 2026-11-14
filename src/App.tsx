@@ -279,6 +279,38 @@ export default function App() {
             </div>
           </div>
         </section>
+        {/* AUTOMATIC COMMUNICATION ARCHITECTURE & BAND ADVISOR */}
+        <section className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+              <Satellite className="w-4 h-4" /> Recommended Communication Stack for {siteA.name}
+            </div>
+            <p className="text-sm text-white font-semibold">
+              {simA.dtePercent >= 85
+                ? 'Direct-to-Earth (DTE) Primary — S-Band Telemetry + X/Ka-Band High-Gain Dish'
+                : simA.dtePercent >= 30
+                ? 'Orbital Mothership Relay (LLO) + DTN Store-and-Forward — S-Band Proximity + Ka-Band Trunk'
+                : 'Polar Relay Constellation (NRHO / LunaNet) Required — S-Band Rover Link + Ka-Band/Optical Trunk'}
+            </p>
+            <p className="text-xs text-slate-400">
+              {simA.dtePercent >= 85
+                ? `Clear Earth sightline (${simA.dtePercent}% DTE) allows direct Deep Space Network contact without relay hardware.`
+                : `Surrounding terrain blocks Direct-to-Earth ${100 - simA.dtePercent}% of the mission; an orbiting relay prevents data loss.`}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 text-xs font-mono">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-amber-300">
+              CMD: S-BAND (2.2 GHz)
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-sky-300">
+              DATA: {simA.dtePercent >= 85 ? 'X / KA-BAND DTE' : 'KA-BAND RELAY'}
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-emerald-300">
+              PROTOCOL: NASA DTN
+            </span>
+          </div>
+        </section>
 
         {/* STEP 2: PLAIN-ENGLISH LIVE STATUS CARDS */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -583,6 +615,8 @@ export default function App() {
             </table>
           </div>
         </section>
+
+        
       </main>
     </div>
   );
