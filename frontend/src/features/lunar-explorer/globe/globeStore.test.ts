@@ -47,4 +47,25 @@ describe('globeStore', () => {
     useGlobeStore.getState().toggleCategory('clps');
     expect(useGlobeStore.getState().visibleCategories.clps).toBe(false);
   });
+
+  it('manages Cassini satellite state and telemetry', () => {
+    expect(useGlobeStore.getState().showSatellite).toBe(true);
+    useGlobeStore.getState().toggleSatellite();
+    expect(useGlobeStore.getState().showSatellite).toBe(false);
+
+    useGlobeStore.getState().setSatelliteTelemetry({
+      latitude_deg: -89.9,
+      longitude_deg: 0,
+      altitude_km: 250,
+      isOverSouthPole: true,
+      targetRegion: 'Shackleton Crater',
+    });
+    expect(useGlobeStore.getState().satelliteTelemetry.latitude_deg).toBe(-89.9);
+    expect(useGlobeStore.getState().satelliteTelemetry.isOverSouthPole).toBe(true);
+
+    useGlobeStore.getState().focusSouthPoleAndSatellite();
+    expect(useGlobeStore.getState().southPoleMode).toBe(true);
+    expect(useGlobeStore.getState().showSatellitePanel).toBe(true);
+    expect(useGlobeStore.getState().command?.kind).toBe('southPole');
+  });
 });

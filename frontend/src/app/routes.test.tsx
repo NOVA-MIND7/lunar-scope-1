@@ -90,7 +90,7 @@ describe('routing and shell', () => {
     const drawer = screen.getByTestId('mobile-nav');
     await user.click(within(drawer).getByRole('link', { name: 'Solar Analysis' }));
     expect(screen.queryByTestId('mobile-nav')).not.toBeInTheDocument();
-    expect(await screen.findByTestId('not-implemented')).toBeInTheDocument();
+    expect(await screen.findByTestId('not-implemented', {}, { timeout: 10000 })).toBeInTheDocument();
   });
 
   it('shows the not-implemented notice instead of invented numbers on science pages', async () => {

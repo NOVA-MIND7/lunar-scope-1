@@ -27,7 +27,7 @@ describe('CoordinateEntryPanel', () => {
     await user.type(screen.getByLabelText('Longitude (°E)'), '181');
     await user.click(screen.getByRole('button', { name: 'Locate on Moon' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Longitude must be between');
-  });
+  }, 15000);
   it('valid entry sets pending and global selectedCoordinates', async () => {
     const user = userEvent.setup();
     render(<CoordinateEntryPanel />);

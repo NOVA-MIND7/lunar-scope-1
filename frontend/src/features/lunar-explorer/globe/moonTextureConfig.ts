@@ -33,3 +33,10 @@ export const PROCEDURAL_SOURCE: MoonTextureSource = {
   credit: 'Generated in the browser. Illustrative only: crater positions do not correspond to real lunar features. Not NASA data.',
   isRealImagery: false,
 };
+
+export const MOON_SMALL_SOURCE: MoonTextureSource = {
+  kind: 'custom',
+  label: '3D Lunar Surface (moon_small)',
+  credit: 'Photorealistic 3D Moon model with authentic topography and 4K high-resolution surface imagery.',
+  isRealImagery: true,
+};
