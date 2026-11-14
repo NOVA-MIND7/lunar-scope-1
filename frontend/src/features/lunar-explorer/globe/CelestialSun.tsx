@@ -66,6 +66,7 @@ export const CelestialSun = memo(function CelestialSun({
 }) {
   const showSun = useGlobeStore((s) => s.showSun);
   const setFocusTarget = useGlobeStore((s) => s.setFocusTarget);
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
   const [hovered, setHovered] = useState(false);
 
   // Position of the Sun in 3D scene space (center of solar system)
@@ -111,20 +112,22 @@ export const CelestialSun = memo(function CelestialSun({
         </Suspense>
 
         {/* 3D Label & Telemetry Badge */}
-        <Html position={[0, 3.2, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[35, 0]}>
-          <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-amber-400">
-              <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
-              THE SUN · ILLUMINATION SOURCE
+        {showTelemetryLabels ? (
+          <Html position={[0, 3.2, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[35, 0]}>
+            <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur">
+              <div className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-amber-400">
+                <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
+                THE SUN · ILLUMINATION SOURCE
+              </div>
+              <div className="font-mono text-[9px] text-fg-muted">
+                Subsolar Zenith: {formatLatitude(subsolarCoords.latitude_deg)}, {formatLongitude(subsolarCoords.longitude_deg)}
+              </div>
+              {hovered ? (
+                <div className="mt-0.5 text-[9px] text-cyan font-mono">Click to view illuminated hemisphere</div>
+              ) : null}
             </div>
-            <div className="font-mono text-[9px] text-fg-muted">
-              Subsolar Zenith: {formatLatitude(subsolarCoords.latitude_deg)}, {formatLongitude(subsolarCoords.longitude_deg)}
-            </div>
-            {hovered ? (
-              <div className="mt-0.5 text-[9px] text-cyan font-mono">Click to view illuminated hemisphere</div>
-            ) : null}
-          </div>
-        </Html>
+          </Html>
+        ) : null}
       </group>
     </group>
   );

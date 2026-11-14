@@ -86,6 +86,7 @@ export const CelestialEarth = memo(function CelestialEarth({
   const selectedEarthPath = useGlobeStore((s) => s.selectedEarthPath);
   const setSelectedEarthPath = useGlobeStore((s) => s.setSelectedEarthPath);
   const activeTimestampMs = useGlobeStore((s) => s.activeTimestampMs);
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
 
   const earthSpinRef = useRef<Group>(null);
   const cloudsRef = useRef<Mesh>(null);
@@ -187,66 +188,64 @@ export const CelestialEarth = memo(function CelestialEarth({
         </mesh>
 
         {/* 3D Label & Telemetry Badge */}
-        <Html position={[0, EARTH_RADIUS + 0.85, 0]} center zIndexRange={[35, 0]}>
-          <div className="flex flex-col items-center whitespace-nowrap rounded border border-blue-400/60 bg-bg/95 px-2.5 py-1.5 shadow-lg backdrop-blur">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-blue-400">
-              <span className="size-2 rounded-full bg-blue-400 animate-pulse" />
-              PLANET EARTH · 12,756 KM
+        {showTelemetryLabels ? (
+          <Html position={[0, EARTH_RADIUS + 0.5, 0]} center zIndexRange={[35, 0]}>
+            <div className={`flex items-center gap-1.5 whitespace-nowrap rounded border ${hovered ? 'border-blue-400 bg-bg shadow-lg' : 'border-blue-400/50 bg-bg/90 shadow-md'} px-2 py-0.5 backdrop-blur transition`}>
+              <span className="size-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <span className="font-mono text-[8px] font-bold text-blue-400">EARTH</span>
+              <span className="font-mono text-[7px] text-fg-muted">12,756 KM</span>
+
+              {/* Satellite 3-Path Selector Controls */}
+              <div className="flex items-center gap-0.5 border-l border-line/60 pl-1">
+                <button
+                  type="button"
+                  className={`cursor-pointer rounded px-1 py-0 font-mono text-[7px] font-bold transition ${
+                    selectedEarthPath === 1
+                      ? 'bg-cyan/30 text-cyan'
+                      : 'text-fg-dim hover:text-cyan'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedEarthPath(1);
+                  }}
+                  title="Path 1: Low Earth Orbit (LEO)"
+                >
+                  P1
+                </button>
+                <button
+                  type="button"
+                  className={`cursor-pointer rounded px-1 py-0 font-mono text-[7px] font-bold transition ${
+                    selectedEarthPath === 2
+                      ? 'bg-emerald-400/30 text-emerald-400'
+                      : 'text-fg-dim hover:text-emerald-400'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedEarthPath(2);
+                  }}
+                  title="Path 2: Sun-Synchronous Polar Orbit (SSO)"
+                >
+                  P2
+                </button>
+                <button
+                  type="button"
+                  className={`cursor-pointer rounded px-1 py-0 font-mono text-[7px] font-bold transition ${
+                    selectedEarthPath === 3
+                      ? 'bg-amber-400/30 text-amber-400'
+                      : 'text-fg-dim hover:text-amber-400'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedEarthPath(3);
+                  }}
+                  title="Path 3: High-Eccentricity Orbit (HEO)"
+                >
+                  P3
+                </button>
+              </div>
             </div>
-            <div className="font-mono text-[9px] text-fg-muted">
-              Orbiting Sun · Axial Tilt: 23.5°
-            </div>
-            {/* Satellite 3-Path Selector Controls */}
-            <div className="mt-1 flex items-center gap-1">
-              <span className="font-mono text-[8px] text-fg-dim">Paths:</span>
-              <button
-                type="button"
-                className={`cursor-pointer rounded px-1.5 py-0.5 font-mono text-[8px] font-medium transition ${
-                  selectedEarthPath === 1
-                    ? 'border border-cyan bg-cyan/20 text-cyan font-bold'
-                    : 'bg-surface-elevated/70 text-fg-muted hover:text-cyan'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedEarthPath(1);
-                }}
-              >
-                1 LEO
-              </button>
-              <button
-                type="button"
-                className={`cursor-pointer rounded px-1.5 py-0.5 font-mono text-[8px] font-medium transition ${
-                  selectedEarthPath === 2
-                    ? 'border border-emerald-400 bg-emerald-400/20 text-emerald-400 font-bold'
-                    : 'bg-surface-elevated/70 text-fg-muted hover:text-emerald-400'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedEarthPath(2);
-                }}
-              >
-                2 SSO
-              </button>
-              <button
-                type="button"
-                className={`cursor-pointer rounded px-1.5 py-0.5 font-mono text-[8px] font-medium transition ${
-                  selectedEarthPath === 3
-                    ? 'border border-amber-400 bg-amber-400/20 text-amber-400 font-bold'
-                    : 'bg-surface-elevated/70 text-fg-muted hover:text-amber-400'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedEarthPath(3);
-                }}
-              >
-                3 HEO
-              </button>
-            </div>
-            {hovered ? (
-              <div className="mt-0.5 text-[8px] text-cyan font-mono">Click globe to focus on Earth</div>
-            ) : null}
-          </div>
-        </Html>
+          </Html>
+        ) : null}
       </group>
     </group>
   );

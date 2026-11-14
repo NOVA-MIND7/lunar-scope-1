@@ -21,14 +21,14 @@ function Brand({ collapsed }: { collapsed: boolean }) {
 }
 
 function NavItem({ route, collapsed, onNavigate }: { route: RouteDef; collapsed: boolean; onNavigate?: () => void }) {
-  const { path, label, icon: Icon } = route;
+  const { path, label, description, icon: Icon } = route;
   const backend = useBackendStatus();
   return (
     <NavLink
       to={path}
       end={path === '/'}
       onClick={onNavigate}
-      title={collapsed ? label : undefined}
+      title={description || label}
       aria-label={collapsed ? label : undefined}
       className={({ isActive }) =>
         `group relative flex items-center gap-3 rounded px-3 py-2 text-[13px] transition-colors ${collapsed ? 'justify-center' : ''} ${

@@ -37,32 +37,73 @@ export function CoordinateEntryPanel() {
     setPending(la, lo, { focus: true });
   };
 
+  const FAMOUS_PRESETS = [
+    { label: 'Apollo 11 (Historic)', lat: 0.6741, lon: 23.473 },
+    { label: 'Shackleton Crater (South Pole)', lat: -89.9, lon: 0.0 },
+    { label: 'Copernicus Crater', lat: 9.62, lon: -20.08 },
+    { label: 'Tycho Crater (Rays)', lat: -43.31, lon: -11.36 },
+    { label: 'Ocean of Storms (Apollo 12)', lat: -3.01, lon: -23.42 },
+  ];
+
+  const handleSelectPreset = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    const preset = FAMOUS_PRESETS.find((p) => p.label === val);
+    if (preset) {
+      setLat(String(preset.lat));
+      setLon(String(preset.lon));
+      setError(null);
+      setPending(preset.lat, preset.lon, { focus: true });
+    }
+  };
+
   return (
     <MissionPanel title="Enter coordinates" icon={Crosshair}>
-      <form onSubmit={submit} className="space-y-2.5" noValidate aria-label="Coordinate entry">
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label htmlFor="entry-lat" className="label mb-1 block">
-              Latitude (°)
-            </label>
-            <input id="entry-lat" className="field font-mono" inputMode="decimal" placeholder="-90 … +90" value={lat} onChange={(e) => setLat(e.target.value)} aria-invalid={error ? true : undefined} />
-          </div>
-          <div>
-            <label htmlFor="entry-lon" className="label mb-1 block">
-              Longitude (°E)
-            </label>
-            <input id="entry-lon" className="field font-mono" inputMode="decimal" placeholder="-180 … +180" value={lon} onChange={(e) => setLon(e.target.value)} aria-invalid={error ? true : undefined} />
-          </div>
+      <div className="space-y-2.5">
+        <div>
+          <label htmlFor="landmark-preset" className="label mb-1 block">
+            Famous Lunar Sites
+          </label>
+          <select
+            id="landmark-preset"
+            className="field text-xs"
+            defaultValue=""
+            onChange={handleSelectPreset}
+          >
+            <option value="">Quick Jump to a Landmark…</option>
+            {FAMOUS_PRESETS.map((p) => (
+              <option key={p.label} value={p.label}>
+                {p.label}
+              </option>
+            ))}
+          </select>
         </div>
-        {error ? (
-          <p role="alert" className="text-xs text-danger">
-            {error}
-          </p>
-        ) : null}
-        <button type="submit" className="btn w-full">
-          Locate on Moon
-        </button>
-      </form>
+
+        <form onSubmit={submit} className="space-y-2.5" noValidate aria-label="Coordinate entry">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label htmlFor="entry-lat" className="label mb-1 block">
+                Latitude (°)
+              </label>
+              <input id="entry-lat" className="field font-mono" inputMode="decimal" placeholder="-90 … +90" value={lat} onChange={(e) => setLat(e.target.value)} aria-invalid={error ? true : undefined} />
+            </div>
+            <div>
+              <label htmlFor="entry-lon" className="label mb-1 block">
+                Longitude (°E)
+              </label>
+              <input id="entry-lon" className="field font-mono" inputMode="decimal" placeholder="-180 … +180" value={lon} onChange={(e) => setLon(e.target.value)} aria-invalid={error ? true : undefined} />
+            </div>
+          </div>
+          {error ? (
+            <p role="alert" className="text-xs text-danger">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" className="btn w-full">
+            Locate on Moon
+          </button>
+        </form>
+      </div>
     </MissionPanel>
   );
 }

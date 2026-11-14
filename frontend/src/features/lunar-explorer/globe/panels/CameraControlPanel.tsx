@@ -16,6 +16,7 @@ import {
   Globe,
   Play,
   Pause,
+  Tag,
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { useGlobeStore } from '../globeStore';
@@ -46,11 +47,13 @@ export function CameraControlPanel({ compact = false, fullscreen }: { compact?: 
   const interactionMode = useGlobeStore((s) => s.interactionMode);
   const setInteractionMode = useGlobeStore((s) => s.setInteractionMode);
   const resetPanelPositions = useGlobeStore((s) => s.resetPanelPositions);
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
+  const toggleTelemetryLabels = useGlobeStore((s) => s.toggleTelemetryLabels);
   const site = useAppStore((s) => s.selectedLandingSite);
   const camera = useGlobeStore((s) => s.camera);
 
   const focusSite = () => site && issue({ kind: 'focus', latitude_deg: site.coordinates.latitude_deg, longitude_deg: site.coordinates.longitude_deg });
-  const southLabel = southPoleMode ? 'EXIT SOUTH POLE MODE' : 'EXPLORE LUNAR SOUTH POLE';
+  const southLabel = southPoleMode ? 'Exit South Pole' : 'Explore South Pole';
   const toggleSouth = southPoleMode ? exitSouthPole : enterSouthPole;
 
   const iconBtn = (label: string, onClick: () => void, icon: React.ReactNode, opts?: { disabled?: boolean; pressed?: boolean; title?: string }) => (
@@ -98,6 +101,12 @@ export function CameraControlPanel({ compact = false, fullscreen }: { compact?: 
           () => toggleSatellitePanel(),
           <Satellite className="size-4" aria-hidden />,
           { pressed: showSatellitePanel, title: 'Cassini Satellite & South Pole Reconnaissance' },
+        )}
+        {iconBtn(
+          showTelemetryLabels ? 'Hide satellite & body labels/tabs' : 'Show satellite & body labels/tabs',
+          toggleTelemetryLabels,
+          <Tag className="size-4" aria-hidden />,
+          { pressed: showTelemetryLabels, title: showTelemetryLabels ? 'Hide satellite & body labels/tabs' : 'Show satellite & body labels/tabs' },
         )}
         {compact
           ? iconBtn(southLabel, toggleSouth, <Snowflake className="size-4" aria-hidden />, { pressed: southPoleMode })

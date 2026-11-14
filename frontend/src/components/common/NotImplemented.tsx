@@ -15,22 +15,23 @@ export function NotImplemented({ module, plannedInputs, endpoint }: NotImplement
     <div className="card" data-testid="not-implemented">
       <div className="flex items-center gap-3">
         <Construction className="size-5 text-warning" aria-hidden />
-        <h2 className="text-base font-semibold">{module} is not implemented yet</h2>
+        <h2 className="text-base font-semibold">{module} is in development</h2>
       </div>
       <p className="mt-3 text-sm text-fg-muted">
-        The scientific calculations for this module arrive in a later development phase. No placeholder or
-        invented values are shown.
+        This scientific computation module is scheduled for the upcoming phase. To ensure mission-grade accuracy,
+        no simulated or invented numbers are displayed until real orbital models are calculated.
       </p>
-      <p className="label mt-5">Planned inputs</p>
-      <ul className="mt-2 list-inside list-disc text-sm text-fg">
-        {plannedInputs.map((input) => (
-          <li key={input}>{input}</li>
-        ))}
-      </ul>
+      <div className="mt-4 rounded-lg bg-surface-elevated/40 border border-line p-3">
+        <p className="label text-cyan mb-1.5">What this module will calculate:</p>
+        <ul className="list-inside list-disc text-xs space-y-1 text-fg">
+          {plannedInputs.map((input) => (
+            <li key={input}>{input}</li>
+          ))}
+        </ul>
+      </div>
       {endpoint ? (
-        <p className="mt-5 text-xs text-fg-muted">
-          Backend interface: <code className="font-mono text-cyan">{endpoint}</code> (documented, returns HTTP 501
-          until implemented)
+        <p className="mt-4 text-xs text-fg-dim">
+          API Endpoint: <code className="font-mono text-cyan">{endpoint}</code> (returns HTTP 501 until active)
         </p>
       ) : null}
     </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -15,8 +16,21 @@ export default function SiteNavigatorPage() {
   const selected = useAppStore((s) => s.selectedLandingSite);
   const selectLandingSite = useAppStore((s) => s.selectLandingSite);
   const [filter, setFilter] = useState<SiteCategory | 'all'>('all');
+  const [search, setSearch] = useState('');
 
-  const sites = useMemo(() => (data?.sites ?? []).filter((s) => filter === 'all' || s.category === filter), [data, filter]);
+  const sites = useMemo(() => {
+    const list = data?.sites ?? [];
+    return list.filter((s) => {
+      const matchCategory = filter === 'all' || s.category === filter;
+      const query = search.trim().toLowerCase();
+      const matchSearch =
+        !query ||
+        s.name.toLowerCase().includes(query) ||
+        s.region.toLowerCase().includes(query) ||
+        s.description.toLowerCase().includes(query);
+      return matchCategory && matchSearch;
+    });
+  }, [data, filter, search]);
 
   return (
     <div className="mx-auto max-w-[1600px]">
@@ -29,6 +43,19 @@ export default function SiteNavigatorPage() {
               {data.disclaimer}
             </p>
           ) : null}
+
+          {/* User-friendly search bar */}
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-fg-dim" aria-hidden />
+            <input
+              type="search"
+              className="field pl-8 text-xs"
+              placeholder="Search landing sites (e.g. Apollo, Shackleton, Artemis)..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search landing sites"
+            />
+          </div>
 
           <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Filter by category">
             {(['all', ...CATEGORY_ORDER.filter((c) => c !== 'custom')] as const).map((c) => (

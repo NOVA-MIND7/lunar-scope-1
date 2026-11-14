@@ -190,6 +190,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
   const trackSatellite = useGlobeStore((s) => s.trackSatellite);
   const selectedSatelliteId = useGlobeStore((s) => s.selectedSatelliteId);
   const setSelectedSatelliteId = useGlobeStore((s) => s.setSelectedSatelliteId);
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
 
   // Group refs for 3 satellites
   const sat1Ref = useRef<Group>(null);
@@ -357,7 +358,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
           <CassiniModel />
         </Suspense>
 
-        {(hoveredSat === 'cassini' || selectedSatelliteId === 'cassini') ? (
+        {showTelemetryLabels && (hoveredSat === 'cassini' || selectedSatelliteId === 'cassini') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-cyan/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
               <span className="font-mono text-[9px] font-semibold text-cyan">🛰️ CASSINI · POLAR ORBIT</span>
@@ -383,7 +384,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
       >
         <LROModel />
 
-        {(hoveredSat === 'lro' || selectedSatelliteId === 'lro') ? (
+        {showTelemetryLabels && (hoveredSat === 'lro' || selectedSatelliteId === 'lro') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-emerald-400/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
               <span className="font-mono text-[9px] font-semibold text-emerald-400">🛰️ LRO · INCLINED ORBIT</span>
@@ -409,7 +410,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
       >
         <GatewayModel />
 
-        {(hoveredSat === 'gateway' || selectedSatelliteId === 'gateway') ? (
+        {showTelemetryLabels && (hoveredSat === 'gateway' || selectedSatelliteId === 'gateway') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
               <span className="font-mono text-[9px] font-semibold text-amber-400">🛰️ GATEWAY · HALO ORBIT</span>
