@@ -74,8 +74,12 @@ interface GlobeState {
   isTimePlaying: boolean;
   astronomicalPhase: { percent: number; name: string; elongationDeg: number };
   focusTarget: 'moon' | 'earth' | 'sun';
+  /** Toggle visibility of floating 3D tabs/badges on satellites, Earth, Sun & ground stations */
+  showTelemetryLabels: boolean;
   /** Mouse interaction mode for 3D Moon: rotate (orbit) vs pan (drag view) */
   interactionMode: 'rotate' | 'pan';
+  /** Active visualization mode: globe | map2d | solarsystem */
+  visualizationMode: 'globe' | 'map2d' | 'solarsystem';
   resetPanelPositionsKey: number;
 }
 
@@ -125,9 +129,11 @@ interface GlobeActions {
   setPlanetaryRotationSpeed: (speed: number) => void;
   alignWithEarth: () => void;
   setFocusTarget: (target: 'moon' | 'earth' | 'sun') => void;
+  toggleTelemetryLabels: () => void;
   /** Mouse interaction actions */
   setInteractionMode: (mode: 'rotate' | 'pan') => void;
   toggleInteractionMode: () => void;
+  setVisualizationMode: (mode: 'globe' | 'map2d' | 'solarsystem') => void;
   resetPanelPositions: () => void;
   /** Real-time and Astronomical Time Tracking actions */
   setTimeTrackingMode: (mode: 'realtime' | 'simulated' | 'manual') => void;
@@ -188,7 +194,9 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   isTimePlaying: true,
   astronomicalPhase: { percent: 50, name: 'First Quarter', elongationDeg: 90 },
   focusTarget: 'moon',
+  showTelemetryLabels: true,
   interactionMode: 'rotate',
+  visualizationMode: 'globe',
   resetPanelPositionsKey: 0,
 
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
@@ -258,6 +266,7 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
     get().issueCommand({ kind: 'focus', latitude_deg: 0, longitude_deg: 0, distance: 3.2 });
   },
   setFocusTarget: (target) => set({ focusTarget: target }),
+  toggleTelemetryLabels: () => set((s) => ({ showTelemetryLabels: !s.showTelemetryLabels })),
   alignWithSun: (direction = [0.55, 0.25, 0.8]) => {
     const v = new Vector3(...direction).normalize();
     const coords = vector3ToLatLon(v);
@@ -270,6 +279,7 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   },
   setInteractionMode: (mode) => set({ interactionMode: mode }),
   toggleInteractionMode: () => set((s) => ({ interactionMode: s.interactionMode === 'rotate' ? 'pan' : 'rotate' })),
+  setVisualizationMode: (mode) => set({ visualizationMode: mode }),
   resetPanelPositions: () => set((s) => ({ resetPanelPositionsKey: s.resetPanelPositionsKey + 1 })),
   setTimeTrackingMode: (mode) => set({ timeTrackingMode: mode }),
   setActiveTimestampMs: (ms) => set({ activeTimestampMs: ms }),

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
-import { Globe2 } from 'lucide-react';
+import { Globe2, Clock, Layers, Compass, Tag } from 'lucide-react';
 import type { LandingSite } from '@/types';
 import { useSites } from '@/hooks/useApi';
 import { useFullscreen } from '@/hooks/useFullscreen';
@@ -36,6 +36,80 @@ export interface LunarGlobeProps {
 }
 
 const NO_SITES: LandingSite[] = [];
+
+function QuickNavHelper() {
+  const issue = useGlobeStore((s) => s.issueCommand);
+  const setFocusTarget = useGlobeStore((s) => s.setFocusTarget);
+  const enterSouthPole = useGlobeStore((s) => s.enterSouthPole);
+  const alignWithEarth = useGlobeStore((s) => s.alignWithEarth);
+  const alignWithSun = useGlobeStore((s) => s.alignWithSun);
+  const setPending = useGlobeStore((s) => s.setPending);
+
+  return (
+    <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-full border border-line bg-bg/90 px-3 py-1 shadow-xl backdrop-blur-md text-[11px]">
+      <span className="hidden xl:inline text-fg-dim font-mono text-[10px]">
+        🖱️ Rotate: Drag &nbsp;|&nbsp; 🔄 Zoom: Scroll &nbsp;|&nbsp; 📍 Click: Pick
+      </span>
+      <div className="hidden xl:inline h-3 w-px bg-line" />
+      <span className="text-fg-muted font-medium text-[10px]">Quick Jump:</span>
+      <button
+        type="button"
+        className="rounded px-2 py-0.5 font-medium text-cyan hover:bg-cyan/15 transition cursor-pointer"
+        onClick={() => {
+          setFocusTarget('moon');
+          setPending(0.6741, 23.473, { focus: true });
+        }}
+        title="Fly to Apollo 11 landing site"
+      >
+        Apollo 11
+      </button>
+      <button
+        type="button"
+        className="rounded px-2 py-0.5 font-medium text-cyan hover:bg-cyan/15 transition cursor-pointer"
+        onClick={() => {
+          setFocusTarget('moon');
+          enterSouthPole();
+        }}
+        title="Explore Lunar South Pole"
+      >
+        South Pole
+      </button>
+      <button
+        type="button"
+        className="rounded px-2 py-0.5 font-medium text-blue-400 hover:bg-blue-400/15 transition cursor-pointer"
+        onClick={() => {
+          setFocusTarget('earth');
+          alignWithEarth();
+        }}
+        title="View Planet Earth"
+      >
+        Earth
+      </button>
+      <button
+        type="button"
+        className="rounded px-2 py-0.5 font-medium text-amber-400 hover:bg-amber-400/15 transition cursor-pointer"
+        onClick={() => {
+          setFocusTarget('sun');
+          alignWithSun();
+        }}
+        title="View the Sun"
+      >
+        Sun
+      </button>
+      <button
+        type="button"
+        className="rounded px-2 py-0.5 font-medium text-fg-muted hover:text-fg hover:bg-surface-elevated transition cursor-pointer"
+        onClick={() => {
+          setFocusTarget('moon');
+          issue({ kind: 'reset' });
+        }}
+        title="Reset camera view to default"
+      >
+        Reset
+      </button>
+    </div>
+  );
+}
 
 function CameraProbe() {
   const camera = useGlobeStore((s) => s.camera);
@@ -92,6 +166,28 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
 
   const isFull = variant === 'full';
   const floating = !isFull || isLg || fullscreen.isFullscreen;
+
+  // Flyout drawer states (collapsed by default so simulation card fills the view cleanly)
+  const [showTimeFlyout, setShowTimeFlyout] = useState(false);
+  const [showNavLayers, setShowNavLayers] = useState(false);
+  const [showMissionFlyout, setShowMissionFlyout] = useState(false);
+
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
+  const toggleTelemetryLabels = useGlobeStore((s) => s.toggleTelemetryLabels);
+  const activeTimestampMs = useGlobeStore((s) => s.activeTimestampMs);
+  const timeTrackingMode = useGlobeStore((s) => s.timeTrackingMode);
+
+  // Stop parent window from scrolling up/down when mouse wheel is scrolled on 3D simulation
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const preventWindowScroll = (e: WheelEvent) => {
+      e.preventDefault();
+    };
+    el.addEventListener('wheel', preventWindowScroll, { passive: false });
+    return () => el.removeEventListener('wheel', preventWindowScroll);
+  }, []);
+
   const failure = !webgl
     ? 'Your browser or device could not create a WebGL context, which the 3D Moon requires.'
     : contextLost
@@ -102,7 +198,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
 
   const stage = (
     <div
-      className={floating ? 'absolute inset-0' : 'relative h-[56vh] min-h-[340px]'}
+      className={floating ? 'absolute inset-0 touch-none overscroll-none' : 'relative h-[56vh] min-h-[340px] touch-none overscroll-none'}
       role="application"
       aria-label="Interactive 3D Moon. Drag to rotate, scroll to zoom, right-drag to pan, double-click to focus, click to pick a location."
     >
@@ -163,48 +259,143 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
       data-ready={canvasReady && Boolean(textures) ? 'true' : 'false'}
       aria-label="3D lunar globe"
       className={`relative isolate bg-bg ${floating ? 'overflow-hidden' : ''} ${fullscreen.isFullscreen ? 'h-screen w-screen' : className}`}
+      style={{ overscrollBehavior: 'none', touchAction: 'none' }}
     >
       <CameraProbe />
-      {/* Floating Astronomical Real-Time & Date Control Bar */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[95vw]">
-        <AstronomicalTimeBar />
-      </div>
       {stage}
+
+      {/* Primary Simulation HUD Icon Toolbar pinned on top of the simulation card */}
+      <div className="absolute top-3 left-3 z-20 flex flex-wrap items-center gap-1.5 pointer-events-auto">
+        {/* Time & Clock Icon Button */}
+        <button
+          type="button"
+          className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-mono backdrop-blur transition cursor-pointer shadow-lg ${
+            showTimeFlyout
+              ? 'border-cyan bg-cyan/25 text-cyan font-bold shadow-cyan/20'
+              : 'border-line/80 bg-bg/90 text-fg-muted hover:text-cyan hover:border-cyan/50'
+          }`}
+          onClick={() => {
+            setShowTimeFlyout((v) => !v);
+            if (showNavLayers) setShowNavLayers(false);
+            if (showMissionFlyout) setShowMissionFlyout(false);
+          }}
+          title="Toggle Astronomical Time & Orbit Controller"
+        >
+          <Clock className="size-3.5 text-cyan" />
+          <span className="hidden sm:inline">
+            {timeTrackingMode === 'realtime' ? '● LIVE' : 'TIME'}
+          </span>
+          <span className="text-[11px] text-fg-dim font-normal">
+            {new Date(activeTimestampMs).toISOString().slice(0, 16).replace('T', ' ')} UTC
+          </span>
+        </button>
+
+        {/* Navigation & Layers Icon Button */}
+        <button
+          type="button"
+          className={`btn-icon size-8 rounded-lg border backdrop-blur transition cursor-pointer shadow-lg ${
+            showNavLayers
+              ? 'border-cyan bg-cyan/25 text-cyan font-bold shadow-cyan/20'
+              : 'border-line/80 bg-bg/90 text-fg-muted hover:text-cyan hover:border-cyan/50'
+          }`}
+          onClick={() => {
+            setShowNavLayers((v) => !v);
+            if (showTimeFlyout) setShowTimeFlyout(false);
+            if (showMissionFlyout) setShowMissionFlyout(false);
+          }}
+          title="Navigation, Coordinates & Surface Layers"
+        >
+          <Layers className="size-4" />
+        </button>
+
+        {/* Mission Controls & Sites Icon Button */}
+        <button
+          type="button"
+          className={`btn-icon size-8 rounded-lg border backdrop-blur transition cursor-pointer shadow-lg ${
+            showMissionFlyout
+              ? 'border-cyan bg-cyan/25 text-cyan font-bold shadow-cyan/20'
+              : 'border-line/80 bg-bg/90 text-fg-muted hover:text-cyan hover:border-cyan/50'
+          }`}
+          onClick={() => {
+            setShowMissionFlyout((v) => !v);
+            if (showTimeFlyout) setShowTimeFlyout(false);
+            if (showNavLayers) setShowNavLayers(false);
+          }}
+          title="Mission Controls & Cassini South Pole Reconnaissance"
+        >
+          <Compass className="size-4" />
+        </button>
+
+        {/* Satellite Labels / Tabs Toggle Button */}
+        <button
+          type="button"
+          className={`btn-icon size-8 rounded-lg border backdrop-blur transition cursor-pointer shadow-lg ${
+            showTelemetryLabels
+              ? 'border-cyan bg-cyan/25 text-cyan shadow-cyan/20'
+              : 'border-line/80 bg-bg/90 text-fg-dim hover:text-cyan'
+          }`}
+          onClick={toggleTelemetryLabels}
+          title={showTelemetryLabels ? 'Hide satellite & body labels/tabs' : 'Show satellite & body labels/tabs'}
+        >
+          <Tag className="size-4" />
+        </button>
+      </div>
+
+      {/* Top Right Camera & View Controls Toolbar */}
+      <div className="absolute top-3 right-3 z-20 pointer-events-auto">
+        {cameraPanel}
+      </div>
+
+      {/* Floating Astronomical Time Bar Flyout */}
+      {showTimeFlyout ? (
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 max-w-[95vw]">
+          <AstronomicalTimeBar onClose={() => setShowTimeFlyout(false)} />
+        </div>
+      ) : null}
 
       {isFull && floating ? (
         <>
-          <DraggablePanel
-            id="nav-layers"
-            title="Navigation & Layers"
-            dock="left"
-            widthClassName="w-72"
-            maxHeightClassName="max-h-[calc(100vh-13.5rem)]"
-          >
-            <div className="flex flex-col gap-3">
-              <CoordinateEntryPanel />
-              <LayersPanel sites={sites} />
-            </div>
-          </DraggablePanel>
+          {showNavLayers && (
+            <DraggablePanel
+              id="nav-layers"
+              title="Navigation & Layers"
+              dock="left"
+              widthClassName="w-72"
+              maxHeightClassName="max-h-[calc(100vh-10rem)]"
+              onClose={() => setShowNavLayers(false)}
+            >
+              <div className="flex flex-col gap-3">
+                <CoordinateEntryPanel />
+                <LayersPanel sites={sites} />
+              </div>
+            </DraggablePanel>
+          )}
 
-          <DraggablePanel
-            id="mission-controls"
-            title="Mission & Controls"
-            dock="right"
-            widthClassName="w-80"
-            maxHeightClassName="max-h-[calc(100vh-10rem)]"
-          >
-            <div className="flex flex-col gap-3">
-              <CameraControlPanel compact={false} fullscreen={isFull ? fullscreen : undefined} />
-              {showSatellitePanel ? <CassiniSouthPolePanel /> : null}
-              <SiteInfoPanel />
-            </div>
-          </DraggablePanel>
+          {showMissionFlyout && (
+            <DraggablePanel
+              id="mission-controls"
+              title="Mission & Controls"
+              dock="right"
+              widthClassName="w-80"
+              maxHeightClassName="max-h-[calc(100vh-10rem)]"
+              onClose={() => setShowMissionFlyout(false)}
+            >
+              <div className="flex flex-col gap-3">
+                <CameraControlPanel compact={false} fullscreen={isFull ? fullscreen : undefined} />
+                {showSatellitePanel ? <CassiniSouthPolePanel /> : null}
+                <SiteInfoPanel />
+              </div>
+            </DraggablePanel>
+          )}
 
           <div className="pointer-events-none absolute bottom-3 left-3 z-10">
             <CoordinateReadout />
           </div>
           <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2">
             <PendingLocationBar />
+          </div>
+          <div className="pointer-events-none absolute bottom-3 right-3 z-10 hidden sm:block">
+            <QuickNavHelper />
           </div>
         </>
       ) : null}

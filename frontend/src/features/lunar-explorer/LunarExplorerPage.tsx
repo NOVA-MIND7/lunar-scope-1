@@ -1,27 +1,11 @@
-import { PageHeader } from '@/components/common/PageHeader';
 import { LunarGlobe } from './globe/LunarGlobe';
-import { useGlobeStore } from './globe/globeStore';
-
-function SurfaceCredit() {
-  const source = useGlobeStore((s) => s.textureSource);
-  if (!source) return null;
-  return (
-    <p className="mt-3 text-[11px] text-fg-dim" data-testid="surface-credit">
-      <span className="font-semibold text-fg-muted">Surface:</span> {source.label}. {source.credit}{' '}
-      <span className="font-semibold text-fg-muted">Lighting:</span> illustrative default direction, not computed from an ephemeris.
-    </p>
-  );
-}
 
 export default function LunarExplorerPage() {
   return (
-    <div className="mx-auto max-w-[1600px]">
-      <PageHeader
-        title="Lunar Explorer"
-        description="Rotate, zoom and pan the Moon, pick any location, or choose a landing-site candidate."
-      />
-      <LunarGlobe variant="full" className="panel h-auto lg:h-[calc(100vh-14rem)] lg:min-h-[640px]" />
-      <SurfaceCredit />
+    <div className="mx-auto max-w-[1750px] h-[calc(100vh-4.2rem)] flex flex-col overflow-hidden pb-1">
+      <div className="flex-1 min-h-0 relative rounded-xl overflow-hidden border border-line shadow-2xl bg-bg">
+        <LunarGlobe variant="full" className="h-full w-full" />
+      </div>
     </div>
   );
 }

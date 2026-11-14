@@ -1,21 +1,23 @@
 import { memo, Suspense, useMemo, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { Html, useGLTF } from '@react-three/drei';
+import { useFrame, useLoader } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import {
   BufferAttribute,
   BufferGeometry,
   DoubleSide,
   Group,
   Mesh,
+  MeshStandardMaterial,
   Quaternion,
   Vector3,
 } from 'three';
 import { MEAN_LUNAR_RADIUS_KM, vector3ToLatLon } from '@/utils/lunarCoordinates';
 import { useGlobeStore } from './globeStore';
 
-// Increased scale for prominent 3D inspection
-const CASSINI_SCALE = 0.00032;
-const MODEL_CENTER_OFFSET: [number, number, number] = [0, -0.0569, -0.0369];
+// Satellite.obj scale/offset (shared 3D model for all satellites)
+const SATELLITE_SCALE = 0.02;
+const SATELLITE_CENTER_OFFSET: [number, number, number] = [-0.883378 * SATELLITE_SCALE, 0, 0];
 
 /** Generate a 3D orbital trajectory loop for a given radius, inclination, and nodal longitude */
 function useOrbitGeometry(radius: number, inclinationDeg: number, nodeLongitude: number) {
@@ -51,98 +53,60 @@ function useOrbitGeometry(radius: number, inclinationDeg: number, nodeLongitude:
   }, [radius, inclinationDeg, nodeLongitude]);
 }
 
-/** Cassini spacecraft model loaded from Cassini Assembly.glb */
-function CassiniModel() {
-  const modelUrl = `${import.meta.env.BASE_URL}models/cassini.glb`.replace(/\/+/g, '/');
-  const gltf = useGLTF(modelUrl);
+/** Shared 3D satellite model (satellite.obj) used for all lunar satellites */
+function SatelliteModel() {
+  const modelUrl = `${import.meta.env.BASE_URL}models/satellite.obj`.replace(/\/+/g, '/');
+  const obj = useLoader(OBJLoader, modelUrl);
 
   const sceneClone = useMemo(() => {
-    const clone = gltf.scene.clone(true);
+    const clone = obj.clone(true);
     clone.traverse((child) => {
       if ((child as Mesh).isMesh) {
         const mesh = child as Mesh;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
-        if (mesh.material) {
-          (mesh.material as any).needsUpdate = true;
+        if (mesh.name.includes('Placas')) {
+          mesh.material = new MeshStandardMaterial({ color: '#1d4ed8', metalness: 0.85, roughness: 0.2 });
+        } else if (mesh.name.includes('Couro')) {
+          mesh.material = new MeshStandardMaterial({ color: '#d97706', metalness: 0.88, roughness: 0.25 });
+        } else if (mesh.name.includes('Antenna')) {
+          mesh.material = new MeshStandardMaterial({ color: '#f8fafc', metalness: 0.92, roughness: 0.15 });
+        } else if (mesh.name.includes('Pinos')) {
+          mesh.material = new MeshStandardMaterial({ color: '#cbd5e1', metalness: 0.9, roughness: 0.15 });
+        } else {
+          mesh.material = new MeshStandardMaterial({ color: '#94a3b8', metalness: 0.8, roughness: 0.25 });
         }
       }
     });
     return clone;
-  }, [gltf.scene]);
+  }, [obj]);
 
   return (
-    <group position={MODEL_CENTER_OFFSET}>
-      <primitive object={sceneClone} scale={CASSINI_SCALE} />
+    <group position={SATELLITE_CENTER_OFFSET}>
+      <primitive object={sceneClone} scale={SATELLITE_SCALE} />
     </group>
   );
 }
 
-/** Fallback model for Cassini */
-function CassiniFallback() {
+/** Fallback model while satellite.obj loads */
+function SatelliteFallback() {
   return (
     <group>
       <mesh>
-        <boxGeometry args={[0.07, 0.12, 0.07]} />
-        <meshStandardMaterial color="#c09030" metalness={0.9} roughness={0.2} />
+        <boxGeometry args={[0.07, 0.1, 0.07]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.25} />
       </mesh>
-      <mesh position={[0, -0.08, 0]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[0.07, 0.025, 24, 1, true]} />
-        <meshStandardMaterial color="#e0e4eb" metalness={0.8} roughness={0.3} side={DoubleSide} />
+      <mesh position={[0.13, 0, 0]}>
+        <boxGeometry args={[0.14, 0.065, 0.006]} />
+        <meshStandardMaterial color="#1d4ed8" metalness={0.7} roughness={0.3} />
       </mesh>
-    </group>
-  );
-}
-
-/** 3D Procedural model for Satellite 2: LRO (Lunar Reconnaissance Orbiter) */
-function LROModel() {
-  return (
-    <group>
-      {/* Central instrumentation bus */}
-      <mesh>
-        <boxGeometry args={[0.065, 0.09, 0.065]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+      <mesh position={[-0.13, 0, 0]}>
+        <boxGeometry args={[0.14, 0.065, 0.006]} />
+        <meshStandardMaterial color="#1d4ed8" metalness={0.7} roughness={0.3} />
       </mesh>
-      {/* High-gain communication dish */}
-      <mesh position={[0, -0.06, 0]} rotation={[Math.PI, 0, 0]}>
-        <coneGeometry args={[0.055, 0.02, 24, 1, true]} />
-        <meshStandardMaterial color="#f8fafc" metalness={0.85} roughness={0.2} side={DoubleSide} />
-      </mesh>
-      {/* Dual Solar Panels */}
-      <mesh position={[0.1, 0, 0]}>
-        <boxGeometry args={[0.12, 0.06, 0.006]} />
-        <meshStandardMaterial color="#1d4ed8" metalness={0.6} roughness={0.4} />
-      </mesh>
-      <mesh position={[-0.1, 0, 0]}>
-        <boxGeometry args={[0.12, 0.06, 0.006]} />
-        <meshStandardMaterial color="#1d4ed8" metalness={0.6} roughness={0.4} />
-      </mesh>
-    </group>
-  );
-}
-
-/** 3D Procedural model for Satellite 3: Artemis Gateway Orbiter */
-function GatewayModel() {
-  return (
-    <group>
-      {/* Pressurized cylindrical habitat */}
-      <mesh rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.045, 0.045, 0.14, 24]} />
-        <meshStandardMaterial color="#94a3b8" metalness={0.85} roughness={0.2} />
-      </mesh>
-      {/* Power and Propulsion Element (PPE) Solar Arrays */}
-      <mesh position={[0, 0.1, 0]}>
-        <boxGeometry args={[0.08, 0.14, 0.006]} />
-        <meshStandardMaterial color="#b45309" metalness={0.7} roughness={0.3} />
-      </mesh>
-      <mesh position={[0, -0.1, 0]}>
-        <boxGeometry args={[0.08, 0.14, 0.006]} />
-        <meshStandardMaterial color="#b45309" metalness={0.7} roughness={0.3} />
-      </mesh>
-      {/* Communication halo antenna */}
-      <mesh position={[0, 0, -0.07]}>
-        <torusGeometry args={[0.035, 0.005, 12, 24]} />
-        <meshStandardMaterial color="#f59e0b" metalness={0.9} roughness={0.2} />
+      <mesh position={[0, -0.07, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.05, 0.02, 24, 1, true]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.9} roughness={0.2} side={DoubleSide} />
       </mesh>
     </group>
   );
@@ -190,6 +154,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
   const trackSatellite = useGlobeStore((s) => s.trackSatellite);
   const selectedSatelliteId = useGlobeStore((s) => s.selectedSatelliteId);
   const setSelectedSatelliteId = useGlobeStore((s) => s.setSelectedSatelliteId);
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
 
   // Group refs for 3 satellites
   const sat1Ref = useRef<Group>(null);
@@ -353,11 +318,11 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
           useGlobeStore.getState().toggleSatellitePanel(true);
         }}
       >
-        <Suspense fallback={<CassiniFallback />}>
-          <CassiniModel />
+        <Suspense fallback={<SatelliteFallback />}>
+          <SatelliteModel />
         </Suspense>
 
-        {(hoveredSat === 'cassini' || selectedSatelliteId === 'cassini') ? (
+        {showTelemetryLabels && (hoveredSat === 'cassini' || selectedSatelliteId === 'cassini') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-cyan/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
               <span className="font-mono text-[9px] font-semibold text-cyan">🛰️ CASSINI · POLAR ORBIT</span>
@@ -381,9 +346,11 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
           useGlobeStore.getState().toggleSatellitePanel(true);
         }}
       >
-        <LROModel />
+        <Suspense fallback={<SatelliteFallback />}>
+          <SatelliteModel />
+        </Suspense>
 
-        {(hoveredSat === 'lro' || selectedSatelliteId === 'lro') ? (
+        {showTelemetryLabels && (hoveredSat === 'lro' || selectedSatelliteId === 'lro') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-emerald-400/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
               <span className="font-mono text-[9px] font-semibold text-emerald-400">🛰️ LRO · INCLINED ORBIT</span>
@@ -407,9 +374,11 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
           useGlobeStore.getState().toggleSatellitePanel(true);
         }}
       >
-        <GatewayModel />
+        <Suspense fallback={<SatelliteFallback />}>
+          <SatelliteModel />
+        </Suspense>
 
-        {(hoveredSat === 'gateway' || selectedSatelliteId === 'gateway') ? (
+        {showTelemetryLabels && (hoveredSat === 'gateway' || selectedSatelliteId === 'gateway') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
               <span className="font-mono text-[9px] font-semibold text-amber-400">🛰️ GATEWAY · HALO ORBIT</span>

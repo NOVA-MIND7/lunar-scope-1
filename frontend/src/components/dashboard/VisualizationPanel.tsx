@@ -16,10 +16,10 @@ export function VisualizationPanel() {
           <DataSourceBadge kind={source.isRealImagery ? 'sample' : 'demo'} label={source.isRealImagery ? 'Installed imagery' : 'Procedural surface'} />
         ) : null
       }
-      className="h-full"
-      bodyClassName="flex p-0"
+      className="h-full flex flex-col"
+      bodyClassName="flex-1 flex p-0 min-h-0 relative"
     >
-      <LunarGlobe variant="compact" showExploreLink className="min-h-[340px] flex-1 sm:min-h-[420px] lg:min-h-[460px]" />
+      <LunarGlobe variant="compact" showExploreLink className="h-full w-full flex-1 min-h-0" />
     </MissionPanel>
   );
 }

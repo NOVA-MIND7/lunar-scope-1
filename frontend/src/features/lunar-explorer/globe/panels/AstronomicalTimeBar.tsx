@@ -5,11 +5,12 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import { useGlobeStore } from '../globeStore';
 import { useAppStore } from '@/stores/appStore';
 
-export function AstronomicalTimeBar() {
+export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
   const timeTrackingMode = useGlobeStore((s) => s.timeTrackingMode);
   const setTimeTrackingMode = useGlobeStore((s) => s.setTimeTrackingMode);
   const activeTimestampMs = useGlobeStore((s) => s.activeTimestampMs);
@@ -57,7 +58,7 @@ export function AstronomicalTimeBar() {
   const isRealtime = timeTrackingMode === 'realtime';
 
   return (
-    <div className="pointer-events-auto flex flex-col md:flex-row items-center gap-2 rounded-lg border border-line bg-bg/95 p-2 shadow-xl backdrop-blur text-xs">
+    <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-1.5 rounded-lg border border-line bg-bg/95 px-2.5 py-1.5 shadow-xl backdrop-blur text-xs">
       {/* Live Real-Time & Custom Toggle */}
       <div className="flex items-center gap-1.5 border-b md:border-b-0 md:border-r border-line pb-1.5 md:pb-0 md:pr-2">
         <button
@@ -177,6 +178,17 @@ export function AstronomicalTimeBar() {
             {astronomicalPhase.name} · {astronomicalPhase.percent}%
           </span>
         </div>
+
+        {onClose && (
+          <button
+            type="button"
+            className="btn-icon size-7 text-fg-dim hover:text-fg ml-1 cursor-pointer"
+            onClick={onClose}
+            title="Close / Auto-hide Time Bar"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );

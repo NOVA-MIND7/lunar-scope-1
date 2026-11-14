@@ -270,6 +270,7 @@ export const EarthSatellites = memo(function EarthSatellites() {
   const setSelectedEarthPath = useGlobeStore((s) => s.setSelectedEarthPath);
   const autoRotate = useGlobeStore((s) => s.autoRotate);
   const planetarySpeed = useGlobeStore((s) => s.planetaryRotationSpeed);
+  const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
 
   // Satellite node group references
   const sat1Ref = useRef<Group>(null);
@@ -407,19 +408,12 @@ export const EarthSatellites = memo(function EarthSatellites() {
           <SatelliteModel />
         </Suspense>
 
-        {(hoveredPath === 1 || selectedEarthPath === 1) && (
-          <Html position={[0, 0.28, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
-            <div className="flex flex-col items-center whitespace-nowrap rounded border border-cyan/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur text-left">
-              <div className="flex items-center gap-1.5 font-mono text-[9px] font-semibold text-cyan">
-                <span className="size-1.5 rounded-full bg-cyan animate-pulse" />
-                SATELLITE · PATH 1 (LEO)
-              </div>
-              <div className="font-mono text-[8px] text-fg-muted">
-                Alt: 450 km · Inc: 28.5° · Vel: 7.66 km/s
-              </div>
-              <div className="font-mono text-[8px] text-fg-dim">
-                Atmospheric & Oceanic Remote Sensing
-              </div>
+        {showTelemetryLabels && (hoveredPath === 1 || selectedEarthPath === 1) && (
+          <Html position={[0, 0.16, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
+            <div className="flex items-center gap-1 whitespace-nowrap rounded border border-cyan/60 bg-bg/95 px-1.5 py-0.5 shadow-md backdrop-blur">
+              <span className="size-1.5 rounded-full bg-cyan animate-pulse" />
+              <span className="font-mono text-[8px] font-bold text-cyan">PATH 1 · LEO</span>
+              <span className="font-mono text-[7px] text-fg-muted">450 km · 7.66 km/s</span>
             </div>
           </Html>
         )}
@@ -443,19 +437,12 @@ export const EarthSatellites = memo(function EarthSatellites() {
           <SatelliteModel />
         </Suspense>
 
-        {(hoveredPath === 2 || selectedEarthPath === 2) && (
-          <Html position={[0, 0.28, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
-            <div className="flex flex-col items-center whitespace-nowrap rounded border border-emerald-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur text-left">
-              <div className="flex items-center gap-1.5 font-mono text-[9px] font-semibold text-emerald-400">
-                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                SATELLITE · PATH 2 (SSO)
-              </div>
-              <div className="font-mono text-[8px] text-fg-muted">
-                Alt: 850 km · Inc: 98.0° (Polar) · Vel: 7.42 km/s
-              </div>
-              <div className="font-mono text-[8px] text-fg-dim">
-                Global Multispectral Surface Mapping
-              </div>
+        {showTelemetryLabels && (hoveredPath === 2 || selectedEarthPath === 2) && (
+          <Html position={[0, 0.16, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
+            <div className="flex items-center gap-1 whitespace-nowrap rounded border border-emerald-400/60 bg-bg/95 px-1.5 py-0.5 shadow-md backdrop-blur">
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-mono text-[8px] font-bold text-emerald-400">PATH 2 · SSO</span>
+              <span className="font-mono text-[7px] text-fg-muted">850 km · 98°</span>
             </div>
           </Html>
         )}
@@ -479,19 +466,12 @@ export const EarthSatellites = memo(function EarthSatellites() {
           <SatelliteModel />
         </Suspense>
 
-        {(hoveredPath === 3 || selectedEarthPath === 3) && (
-          <Html position={[0, 0.28, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
-            <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur text-left">
-              <div className="flex items-center gap-1.5 font-mono text-[9px] font-semibold text-amber-400">
-                <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
-                SATELLITE · PATH 3 (HEO)
-              </div>
-              <div className="font-mono text-[8px] text-fg-muted">
-                Alt: 3,200 km · Inc: 63.4° · Vel: 5.25 km/s
-              </div>
-              <div className="font-mono text-[8px] text-fg-dim">
-                Deep Space Telemetry & Lunar Relay
-              </div>
+        {showTelemetryLabels && (hoveredPath === 3 || selectedEarthPath === 3) && (
+          <Html position={[0, 0.16, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
+            <div className="flex items-center gap-1 whitespace-nowrap rounded border border-amber-400/60 bg-bg/95 px-1.5 py-0.5 shadow-md backdrop-blur">
+              <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="font-mono text-[8px] font-bold text-amber-400">PATH 3 · HEO</span>
+              <span className="font-mono text-[7px] text-fg-muted">3,200 km · 63.4°</span>
             </div>
           </Html>
         )}
