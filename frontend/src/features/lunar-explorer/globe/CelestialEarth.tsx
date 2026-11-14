@@ -11,6 +11,8 @@ import {
 } from 'three';
 import { useGlobeStore } from './globeStore';
 import { EarthSatellites } from './EarthSatellites';
+import { DSNDish } from './DSNDish';
+import { computeAstronomicalState } from '@/utils/astronomicalTime';
 
 const EARTH_RADIUS = 1.65; // Visual size in scene units
 const AXIAL_TILT_RAD = (23.5 * Math.PI) / 180; // 23.5 degrees Earth obliquity
@@ -80,11 +82,10 @@ export const CelestialEarth = memo(function CelestialEarth({
   position = [16, 2.2, 0],
 }: CelestialEarthProps) {
   const showEarth = useGlobeStore((s) => s.showEarth);
-  const autoRotate = useGlobeStore((s) => s.autoRotate);
-  const planetarySpeed = useGlobeStore((s) => s.planetaryRotationSpeed);
   const setFocusTarget = useGlobeStore((s) => s.setFocusTarget);
   const selectedEarthPath = useGlobeStore((s) => s.selectedEarthPath);
   const setSelectedEarthPath = useGlobeStore((s) => s.setSelectedEarthPath);
+  const activeTimestampMs = useGlobeStore((s) => s.activeTimestampMs);
 
   const earthSpinRef = useRef<Group>(null);
   const cloudsRef = useRef<Mesh>(null);
@@ -105,17 +106,18 @@ export const CelestialEarth = memo(function CelestialEarth({
     );
   }, []);
 
-  // Earth axial spin (thana kerakena) around its 23.5° tilted axis
-  useFrame((_, delta) => {
-    if (!autoRotate) return;
-    const dt = Math.min(delta, 0.1);
+  // Earth axial spin (thana kerakena) around its 23.5° tilted axis, locked to live timeline
+  useFrame(() => {
+    const ts = useGlobeStore.getState().activeTimestampMs || activeTimestampMs;
+    const astro = computeAstronomicalState(ts);
 
     if (earthSpinRef.current) {
-      earthSpinRef.current.rotation.y += dt * 0.18 * planetarySpeed;
+      earthSpinRef.current.rotation.y = astro.earthSpinAngleRad;
     }
 
     if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += dt * 0.22 * planetarySpeed;
+      // Atmospheric cloud shell with realistic gentle eastward drift
+      cloudsRef.current.rotation.y = astro.earthSpinAngleRad * 1.008;
     }
   });
 
@@ -150,6 +152,9 @@ export const CelestialEarth = memo(function CelestialEarth({
           <Suspense fallback={<EarthFallback />}>
             <EarthGLBModel />
           </Suspense>
+
+          {/* 70 Meter DSN Ground Station Dish in California, USA */}
+          <DSNDish />
 
           {/* Atmospheric Cloud Shell */}
           <mesh ref={cloudsRef} raycast={() => null}>

@@ -1,9 +1,7 @@
 import { memo, Suspense, useMemo, useState } from 'react';
 import { Html, useGLTF } from '@react-three/drei';
 import {
-  DoubleSide,
   Mesh,
-  Quaternion,
   Vector3,
 } from 'three';
 import { formatLatitude, formatLongitude } from '@/utils/format';
@@ -88,12 +86,6 @@ export const CelestialSun = memo(function CelestialSun({
     [subsolarPos],
   );
 
-  // Orientation to face the Moon center
-  const lookAtMoonQuat = useMemo(() => {
-    const dir = new Vector3(0, 0, 0).sub(sunPos).normalize();
-    return new Quaternion().setFromUnitVectors(new Vector3(0, 0, 1), dir);
-  }, [sunPos]);
-
   if (!showSun || !visible) return null;
 
   return (
@@ -118,45 +110,8 @@ export const CelestialSun = memo(function CelestialSun({
           <SunModel />
         </Suspense>
 
-        {/* Inner Solar Corona Glow */}
-        <mesh raycast={() => null}>
-          <sphereGeometry args={[3.1, 24, 24]} />
-          <meshBasicMaterial
-            color="#fffbe6"
-            transparent
-            opacity={0.55}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-
-        {/* Outer Solar Corona Glow */}
-        <mesh raycast={() => null}>
-          <sphereGeometry args={[4.8, 24, 24]} />
-          <meshBasicMaterial
-            color="#ffa726"
-            transparent
-            opacity={0.22}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-
-        {/* Radial Sun Flare Disc facing Moon */}
-        <mesh quaternion={lookAtMoonQuat} raycast={() => null}>
-          <ringGeometry args={[2.8, 6.8, 32]} />
-          <meshBasicMaterial
-            color="#f59e0b"
-            transparent
-            opacity={0.28}
-            side={DoubleSide}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-
         {/* 3D Label & Telemetry Badge */}
-        <Html position={[0, 3.8, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[35, 0]}>
+        <Html position={[0, 3.2, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[35, 0]}>
           <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur">
             <div className="flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-wider text-amber-400">
               <span className="size-2 rounded-full bg-amber-400 animate-pulse" />

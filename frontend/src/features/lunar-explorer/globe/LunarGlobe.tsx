@@ -15,6 +15,7 @@ import { LunarGlobeLoader } from './LunarGlobeLoader';
 import { WebGLFallback } from './WebGLFallback';
 import { useGlobeStore } from './globeStore';
 import { useMoonTextures } from './useMoonTextures';
+import { AstronomicalTimeBar } from './panels/AstronomicalTimeBar';
 import { CameraControlPanel } from './panels/CameraControlPanel';
 import { CassiniSouthPolePanel } from './panels/CassiniSouthPolePanel';
 import { CoordinateEntryPanel } from './panels/CoordinateEntryPanel';
@@ -164,6 +165,10 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
       className={`relative isolate bg-bg ${floating ? 'overflow-hidden' : ''} ${fullscreen.isFullscreen ? 'h-screen w-screen' : className}`}
     >
       <CameraProbe />
+      {/* Floating Astronomical Real-Time & Date Control Bar */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 max-w-[95vw]">
+        <AstronomicalTimeBar />
+      </div>
       {stage}
 
       {isFull && floating ? (

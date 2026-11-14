@@ -1,9 +1,10 @@
-import { memo, Suspense, useMemo, useRef, useState } from 'react';
+import { memo, Suspense, useMemo, useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Stars } from '@react-three/drei';
 import { BufferAttribute, BufferGeometry, Group, Vector3 } from 'three';
 import type { LandingSite } from '@/types';
 import { useAppStore } from '@/stores/appStore';
+import { computeAstronomicalState } from '@/utils/astronomicalTime';
 import { CassiniSatellite } from './CassiniSatellite';
 import { CelestialEarth } from './CelestialEarth';
 import { CelestialSun } from './CelestialSun';
@@ -44,10 +45,9 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
   const moonSpinRef = useRef<Group>(null);
   const moonOrbitTrailGroupRef = useRef<Group>(null);
 
-  const earthOrbitAngleRef = useRef(0);
-  const moonOrbitAngleRef = useRef(0);
   const lastEclipseRef = useRef(0);
   const lastSunDirUpdate = useRef(0);
+  const lastTimeTelemetryUpdate = useRef(0);
 
   const [eclipseVal, setEclipseVal] = useState(0);
   const [dynamicSunDir, setDynamicSunDir] = useState<readonly [number, number, number]>(sun.direction);
@@ -58,38 +58,58 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
 
   const showGrid = useGlobeStore((s) => s.showGrid);
   const southPoleMode = useGlobeStore((s) => s.southPoleMode);
-  const autoRotate = useGlobeStore((s) => s.autoRotate);
-  const planetarySpeed = useGlobeStore((s) => s.planetaryRotationSpeed);
   const focusTarget = useGlobeStore((s) => s.focusTarget);
   const showOrbitPath = useGlobeStore((s) => s.showOrbitPath);
   const pending = useGlobeStore((s) => s.pending);
   const selectedSite = useAppStore((s) => s.selectedLandingSite);
   const customSelected = selectedSite?.category === 'custom' ? selectedSite : null;
 
+  // Real-time and Astronomical state from store
+  const timeTrackingMode = useGlobeStore((s) => s.timeTrackingMode);
+  const setActiveTimestampMs = useGlobeStore((s) => s.setActiveTimestampMs);
+  const timeMultiplier = useGlobeStore((s) => s.timeMultiplier);
+  const isTimePlaying = useGlobeStore((s) => s.isTimePlaying);
+  const setAstronomicalPhase = useGlobeStore((s) => s.setAstronomicalPhase);
+  const selectedLandingDate = useAppStore((s) => s.selectedLandingDate);
+  const selectedLandingTime = useAppStore((s) => s.selectedLandingTime);
+
+  const currentSimTimeMsRef = useRef<number>(Date.now());
+
+  // Synchronize when date or time changes in store
+  useEffect(() => {
+    if (timeTrackingMode === 'manual' || timeTrackingMode === 'simulated') {
+      const parsed = Date.parse(`${selectedLandingDate}T${selectedLandingTime}:00.000Z`);
+      if (!Number.isNaN(parsed)) {
+        currentSimTimeMsRef.current = parsed;
+      }
+    }
+  }, [selectedLandingDate, selectedLandingTime, timeTrackingMode]);
+
   const earthOrbitGeo = useCircularOrbitGeometry(20.0);
   const moonOrbitGeo = useCircularOrbitGeometry(5.2);
 
   useFrame((_, delta) => {
-    if (!autoRotate) return;
     const dt = Math.min(delta, 0.1);
 
-    // 1. Earth orbits around Sun (radius 20)
-    earthOrbitAngleRef.current = (earthOrbitAngleRef.current + dt * 0.035 * planetarySpeed) % (Math.PI * 2);
-    const ea = earthOrbitAngleRef.current;
-    const ex = Math.sin(ea) * 20.0;
-    const ez = Math.cos(ea) * 20.0;
-    const ey = 0;
+    // 1. Advance time based on tracking mode
+    if (timeTrackingMode === 'realtime') {
+      if (isTimePlaying) {
+        currentSimTimeMsRef.current = Date.now();
+      }
+    } else if (isTimePlaying) {
+      currentSimTimeMsRef.current += dt * timeMultiplier * 1000;
+    }
 
-    // 2. Moon orbits around Earth (radius 5.2, inclined 5.14 degrees)
-    moonOrbitAngleRef.current = (moonOrbitAngleRef.current + dt * 0.20 * planetarySpeed) % (Math.PI * 2);
-    const ma = moonOrbitAngleRef.current;
-    const mx = ex + Math.sin(ma) * 5.2;
-    const mz = ez + Math.cos(ma) * 5.2;
-    const my = ey + Math.sin(ma) * 0.46;
+    useGlobeStore.getState().activeTimestampMs = currentSimTimeMsRef.current;
 
-    // 3. Moon spins on its axis (thana kerakena)
+    // 2. Compute real-time astronomical positions and synchronous Moon rotation
+    const astro = computeAstronomicalState(currentSimTimeMsRef.current);
+    const [ex, ey, ez] = astro.earthPosition;
+    const [mx, my, mz] = astro.moonPosition;
+
+    // 3. Moon rotates on its axis in real time (synchronous tidally locked rotation)
     if (moonSpinRef.current) {
-      moonSpinRef.current.rotation.y += dt * 0.06 * planetarySpeed;
+      moonSpinRef.current.rotation.y = astro.moonSpinAngleRad;
     }
 
     if (earthGroupRef.current) {
@@ -105,6 +125,18 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
     earthPosVec.current.set(ex, ey, ez);
     moonPosVec.current.set(mx, my, mz);
 
+    // Update time telemetry for UI controls
+    const now = performance.now();
+    if (now - lastTimeTelemetryUpdate.current > 400) {
+      lastTimeTelemetryUpdate.current = now;
+      setActiveTimestampMs(currentSimTimeMsRef.current);
+      setAstronomicalPhase({
+        percent: astro.moonPhasePercent,
+        name: astro.moonPhaseName,
+        elongationDeg: astro.elongationDeg,
+      });
+    }
+
     // Target tracking without React re-renders
     if (focusTarget === 'earth') {
       targetPos.set(ex, ey, ez);
@@ -115,7 +147,6 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
     }
 
     // Dynamic solar lighting angle from Moon to Sun at (0, 0, 0)
-    const now = performance.now();
     if (now - lastSunDirUpdate.current > 400) {
       lastSunDirUpdate.current = now;
       const mLen = Math.hypot(mx, my, mz);

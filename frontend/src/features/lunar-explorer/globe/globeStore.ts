@@ -67,6 +67,12 @@ interface GlobeState {
   selectedEarthPath: 1 | 2 | 3;
   autoRotate: boolean;
   planetaryRotationSpeed: number;
+  /** Real-time and Astronomical Time Tracking */
+  timeTrackingMode: 'realtime' | 'simulated' | 'manual';
+  activeTimestampMs: number;
+  timeMultiplier: number;
+  isTimePlaying: boolean;
+  astronomicalPhase: { percent: number; name: string; elongationDeg: number };
   focusTarget: 'moon' | 'earth' | 'sun';
   /** Mouse interaction mode for 3D Moon: rotate (orbit) vs pan (drag view) */
   interactionMode: 'rotate' | 'pan';
@@ -123,6 +129,13 @@ interface GlobeActions {
   setInteractionMode: (mode: 'rotate' | 'pan') => void;
   toggleInteractionMode: () => void;
   resetPanelPositions: () => void;
+  /** Real-time and Astronomical Time Tracking actions */
+  setTimeTrackingMode: (mode: 'realtime' | 'simulated' | 'manual') => void;
+  setActiveTimestampMs: (ms: number) => void;
+  setTimeMultiplier: (multiplier: number) => void;
+  setIsTimePlaying: (playing: boolean) => void;
+  toggleTimePlaying: () => void;
+  setAstronomicalPhase: (phase: { percent: number; name: string; elongationDeg: number }) => void;
 }
 
 let commandCounter = 0;
@@ -169,6 +182,11 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   selectedEarthPath: 1,
   autoRotate: true,
   planetaryRotationSpeed: 1.0,
+  timeTrackingMode: 'realtime',
+  activeTimestampMs: Date.now(),
+  timeMultiplier: 3600,
+  isTimePlaying: true,
+  astronomicalPhase: { percent: 50, name: 'First Quarter', elongationDeg: 90 },
   focusTarget: 'moon',
   interactionMode: 'rotate',
   resetPanelPositionsKey: 0,
@@ -253,6 +271,12 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   setInteractionMode: (mode) => set({ interactionMode: mode }),
   toggleInteractionMode: () => set((s) => ({ interactionMode: s.interactionMode === 'rotate' ? 'pan' : 'rotate' })),
   resetPanelPositions: () => set((s) => ({ resetPanelPositionsKey: s.resetPanelPositionsKey + 1 })),
+  setTimeTrackingMode: (mode) => set({ timeTrackingMode: mode }),
+  setActiveTimestampMs: (ms) => set({ activeTimestampMs: ms }),
+  setTimeMultiplier: (multiplier) => set({ timeMultiplier: multiplier }),
+  setIsTimePlaying: (playing) => set({ isTimePlaying: playing }),
+  toggleTimePlaying: () => set((s) => ({ isTimePlaying: !s.isTimePlaying })),
+  setAstronomicalPhase: (phase) => set({ astronomicalPhase: phase }),
 }));
 
 export const MAX_ZOOM_OUT = MAX_DISTANCE;

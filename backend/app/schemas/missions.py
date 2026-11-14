@@ -85,3 +85,46 @@ class LandingWindow(ApiModel):
 class WindowsResponse(ApiModel):
     method: str
     windows: list[LandingWindow]
+
+
+class TimelinePhase(ApiModel):
+    name: str
+    start_utc: UTCDateTime
+    end_utc: UTCDateTime
+    description: str
+
+
+class TimelineInterval(ApiModel):
+    start_utc: UTCDateTime
+    end_utc: UTCDateTime
+    state: str  # "sunlit", "shadowed", "visible", "occluded"
+
+
+class TimelineTrack(ApiModel):
+    label: str
+    kind: str  # "sunlight", "earth-visibility"
+    fraction: float = Field(ge=0, le=1)
+    intervals: list[TimelineInterval]
+
+
+class TimelineRequest(ApiModel):
+    site_id: str
+    landing_time_utc: UTCDateTime
+    mission_duration_days: float = Field(gt=0, le=3650)
+
+
+class TimelineResponse(ApiModel):
+    method: str
+    site_id: str
+    site_name: str
+    coordinates: LunarCoordinates
+    start_utc: UTCDateTime
+    end_utc: UTCDateTime
+    duration_days: float
+    sunlit_fraction: float = Field(ge=0, le=1)
+    earth_visible_fraction: float = Field(ge=0, le=1)
+    longest_darkness_hours: float = Field(ge=0)
+    sunlight_track: TimelineTrack
+    earth_track: TimelineTrack
+    phases: list[TimelinePhase]
+

@@ -53,6 +53,54 @@ export interface SiteListResponse {
   sites: LandingSite[];
 }
 
+export interface LandingWindow {
+  start_utc: UTCString;
+  end_utc: UTCString;
+  sunlit_fraction: number;
+  earth_visible_fraction: number;
+}
+
+export interface WindowsResponse {
+  method: string;
+  windows: LandingWindow[];
+}
+
+export interface TimelineInterval {
+  start_utc: UTCString;
+  end_utc: UTCString;
+  state: string;
+}
+
+export interface TimelineTrack {
+  label: string;
+  kind: string;
+  fraction: number;
+  intervals: TimelineInterval[];
+}
+
+export interface TimelinePhase {
+  name: string;
+  start_utc: UTCString;
+  end_utc: UTCString;
+  description: string;
+}
+
+export interface TimelineResponse {
+  method: string;
+  site_id: string;
+  site_name: string;
+  coordinates: LunarCoordinates;
+  start_utc: UTCString;
+  end_utc: UTCString;
+  duration_days: number;
+  sunlit_fraction: number;
+  earth_visible_fraction: number;
+  longest_darkness_hours: number;
+  sunlight_track: TimelineTrack;
+  earth_track: TimelineTrack;
+  phases: TimelinePhase[];
+}
+
 export interface HealthResponse {
   status: 'ok';
   service: string;

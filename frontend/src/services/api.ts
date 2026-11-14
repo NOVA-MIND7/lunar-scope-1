@@ -1,4 +1,11 @@
-import type { ApiErrorBody, HealthResponse, LandingSite, SiteListResponse } from '@/types';
+import type {
+  ApiErrorBody,
+  HealthResponse,
+  LandingSite,
+  SiteListResponse,
+  TimelineResponse,
+  WindowsResponse,
+} from '@/types';
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api';
 
@@ -48,4 +55,29 @@ export const api = {
   health: () => request<HealthResponse>('/health'),
   listSites: () => request<SiteListResponse>('/sites'),
   getSite: (siteId: string) => request<LandingSite>(`/sites/${encodeURIComponent(siteId)}`),
+  getMissionTimeline: (payload: { site_id: string; landing_time_utc: string; mission_duration_days: number }) =>
+    request<TimelineResponse>('/missions/timeline', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getLandingWindows: (payload: {
+    site_id: string;
+    search_start_utc: string;
+    search_end_utc: string;
+    mission_duration_days: number;
+    constraints?: { min_sunlit_fraction?: number; min_earth_visible_fraction?: number; max_darkness_hours?: number };
+  }) =>
+    request<WindowsResponse>('/missions/windows', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  getPhysicsComparison: (testMassKg: number = 60.0) =>
+    request<any>(`/physics/comparison?test_mass_kg=${testMassKg}`),
+  getDSNStations: () => request<any[]>('/stations/dsn'),
+  getDSNTracking: () => request<any>('/stations/dsn/tracking'),
+  calculateOrbitalVelocity: (payload: { body: string; altitude_km: number }) =>
+    request<any>('/physics/orbital-velocity', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
