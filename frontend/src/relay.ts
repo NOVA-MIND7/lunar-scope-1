@@ -27,6 +27,7 @@ async function init(): Promise<void> {
   const N = data.mx.length, end = data.t0 + (N - 1) * data.step;
   const slider = $<HTMLInputElement>('sl'); slider.max = String(N - 1);
   let timer: number | null = null;
+  const embedded = window.parent !== window;
   const transfer: TransferState = { running: false, sizeMb: 0, rateMbps: 0, sentMb: 0, receivedMb: 0 };
   const visibleAt = (time: number): Win | undefined => data.win.find(w => time >= w.a && time < w.b);
 
@@ -115,21 +116,49 @@ async function init(): Promise<void> {
     `<b>Windows:</b> ${data.win.length}<br>Three lunar and three Earth relays; a window is available when any pair has line of sight.`;
   $('tb').innerHTML = '<tr><th>Start (UTC)</th><th>End (UTC)</th><th>Duration</th><th>Best delay</th></tr>' +
     data.win.map(w => `<tr><td>${fmt(w.a)}</td><td>${fmt(w.b)}</td><td>${((w.b - w.a) / 60000).toFixed(0)} min</td><td>${(w.minR / C_KMS).toFixed(3)}â€“${(w.maxR / C_KMS).toFixed(3)} s</td></tr>`).join('');
+  const setPaused = (paused: boolean): void => {
+    if (paused) {
+      if (timer !== null) clearInterval(timer);
+      timer = null;
+      $('pl').textContent = '▶ Play';
+      return;
+    }
+    if (timer === null) {
+      $('pl').textContent = 'Pause';
+      timer = window.setInterval(() => {
+        advanceTransfer(+slider.value); slider.value = String((+slider.value + 1) % N); update();
+      }, 40);
+    }
+  };
+
   slider.oninput = update;
   $('start').onclick = (): void => {
     transfer.sizeMb = Math.max(1, +$<HTMLInputElement>('dataSize').value || 1);
     transfer.rateMbps = Math.max(0.1, +$<HTMLInputElement>('rate').value || 0.1);
     transfer.sentMb = 0; transfer.receivedMb = 0; transfer.running = true;
-    if (timer === null) $('pl').click();
+    if (!embedded && timer === null) setPaused(false);
     update();
   };
   $('pl').onclick = (): void => {
+    if (embedded) {
+      window.parent.postMessage({ type: 'relay-toggle' }, '*');
+      return;
+    }
     if (timer !== null) { clearInterval(timer); timer = null; $('pl').textContent = 'â–¶ Play'; return; }
     $('pl').textContent = 'Pause'; timer = window.setInterval(() => {
       advanceTransfer(+slider.value); slider.value = String((+slider.value + 1) % N); update();
     }, 40);
   };
+  window.addEventListener('message', event => {
+    if (event.data?.type === 'relay-frame' && embedded) {
+      slider.value = String(Math.max(0, Math.min(N - 1, Number(event.data.frame) || 0)));
+      update();
+    }
+    if (event.data?.type === 'relay-state' && embedded) setPaused(Boolean(event.data.paused));
+  });
   update();
+  if (embedded) window.parent.postMessage({ type: 'relay-ready' }, '*');
+  else setPaused(false);
 }
 init().catch(error => document.body.append(`Failed to load: ${error}`));
 
