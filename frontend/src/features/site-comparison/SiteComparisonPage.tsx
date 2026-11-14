@@ -1,16 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Award,
   Calendar,
-  Check,
-  CheckCircle2,
   Clock,
   Compass,
   Layers,
   MapPin,
   Plus,
   Radio,
-  Sparkles,
   Sun,
   Trash2,
 } from 'lucide-react';
@@ -30,7 +26,6 @@ import type { ComparisonScenario } from '@/types';
 import { toUtcIso } from '@/utils/time';
 import {
   buildCustomComparisonSite,
-  buildSiteAndDurationRecommendation,
   computeSitePairDistanceKm,
   evaluateMissionScenario,
   PRESET_COMPARISON_SITES,
@@ -134,6 +129,247 @@ function NumericField({
       }}
       className={className}
     />
+  );
+}
+
+function isValidIsoDate(val: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) return false;
+  const d = new Date(`${val}T00:00:00.000Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === val;
+}
+
+/** Typeable YYYY-MM-DD UTC date field paired with a visible dark-mode calendar picker trigger. */
+function UtcDateField({
+  value,
+  onCommit,
+  ariaLabel,
+}: {
+  value: string;
+  onCommit: (nextDate: string) => void;
+  ariaLabel: string;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [focused, setFocused] = useState(false);
+  const pickerRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!focused) {
+      setDraft(value);
+    }
+  }, [value, focused]);
+
+  const invalidDraft = focused && draft.trim() !== '' && !isValidIsoDate(draft.trim());
+
+  return (
+    <div className="relative flex items-center">
+      <input
+        type="text"
+        inputMode="numeric"
+        placeholder="YYYY-MM-DD"
+        aria-label={ariaLabel}
+        value={focused ? draft : value}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(value);
+        }}
+        onChange={(e) => {
+          const next = e.target.value;
+          setDraft(next);
+          if (isValidIsoDate(next.trim())) {
+            onCommit(next.trim());
+          }
+        }}
+        onBlur={() => {
+          setFocused(false);
+          const trimmed = draft.trim();
+          if (isValidIsoDate(trimmed)) {
+            onCommit(trimmed);
+            setDraft(trimmed);
+          } else {
+            setDraft(value);
+          }
+        }}
+        className={`field py-1.5 pl-2 pr-8 font-mono text-xs ${
+          invalidDraft ? 'border-warning/70' : ''
+        }`}
+      />
+      <button
+        type="button"
+        title="Open calendar picker"
+        aria-label={`${ariaLabel} calendar picker`}
+        onClick={() => {
+          const el = pickerRef.current;
+          if (!el) return;
+          if (typeof el.showPicker === 'function') {
+            el.showPicker();
+          } else {
+            el.click();
+          }
+        }}
+        className="absolute right-1.5 inline-flex size-6 items-center justify-center rounded text-cyan hover:bg-cyan/15 cursor-pointer"
+      >
+        <Calendar className="size-3.5" />
+      </button>
+      <input
+        ref={pickerRef}
+        type="date"
+        tabIndex={-1}
+        aria-hidden="true"
+        value={isValidIsoDate(value) ? value : '2027-01-01'}
+        onChange={(e) => {
+          if (e.target.value && isValidIsoDate(e.target.value)) {
+            onCommit(e.target.value);
+            setDraft(e.target.value);
+          }
+        }}
+        className="pointer-events-none absolute right-0 top-0 h-full w-8 opacity-0 [color-scheme:dark]"
+      />
+    </div>
+  );
+}
+
+const QUICK_UTC_HOURS: string[] = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`);
+
+function parseUtcTime(raw: string): string | null {
+  const s = raw.trim().toUpperCase().replace(/UTC$/i, '').trim();
+  const colon = /^(\d{1,2}):(\d{1,2})$/.exec(s);
+  if (colon) {
+    const h = Number(colon[1]);
+    const m = Number(colon[2]);
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+    return null;
+  }
+  const digits = /^(\d{3,4})$/.exec(s);
+  if (digits && digits[1]) {
+    const padded = digits[1].padStart(4, '0');
+    const h = Number(padded.slice(0, 2));
+    const m = Number(padded.slice(2, 4));
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+  }
+  return null;
+}
+
+/** Typeable 24-hour UTC time input (supports any custom HH:MM) with a quick hour picker. */
+function UtcTimeField({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (nextTime: string) => void;
+  ariaLabel: string;
+}) {
+  const normalized = /^\d{2}:\d{2}$/.test(value.slice(0, 5)) ? value.slice(0, 5) : '00:00';
+  const [draft, setDraft] = useState(normalized);
+  const [focused, setFocused] = useState(false);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!focused) setDraft(normalized);
+  }, [normalized, focused]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  const invalidDraft = focused && draft.trim() !== '' && parseUtcTime(draft) === null;
+
+  return (
+    <div ref={containerRef} className="relative flex items-center">
+      <input
+        type="text"
+        inputMode="numeric"
+        placeholder="HH:MM"
+        aria-label={ariaLabel}
+        value={focused ? draft : normalized}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(normalized);
+        }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setDraft(raw);
+          if (/^\d{2}:\d{2}$/.test(raw.trim())) {
+            const parsed = parseUtcTime(raw);
+            if (parsed) onChange(parsed);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            const parsed = parseUtcTime(draft);
+            if (parsed) {
+              onChange(parsed);
+              setDraft(parsed);
+              setFocused(false);
+              (e.currentTarget as HTMLInputElement).blur();
+            }
+          }
+        }}
+        onBlur={() => {
+          setFocused(false);
+          const parsed = parseUtcTime(draft);
+          if (parsed) {
+            onChange(parsed);
+            setDraft(parsed);
+          } else {
+            setDraft(normalized);
+          }
+        }}
+        className={`field py-1.5 pl-2 pr-8 font-mono text-xs ${
+          invalidDraft ? 'border-warning/70' : ''
+        }`}
+      />
+      <button
+        type="button"
+        title="Quick-pick UTC hour (or type any HH:MM)"
+        aria-label={`${ariaLabel} quick picker`}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="absolute right-1.5 inline-flex size-6 items-center justify-center rounded text-cyan hover:bg-cyan/15 cursor-pointer"
+      >
+        <Clock className="size-3.5" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded border border-line-strong bg-panel p-1.5 shadow-xl">
+          <div className="mb-1 px-1 font-mono text-[10px] text-fg-dim">
+            Pick hour or type HH:MM
+          </div>
+          <div className="grid grid-cols-4 gap-1">
+            {QUICK_UTC_HOURS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => {
+                  onChange(t);
+                  setDraft(t);
+                  setOpen(false);
+                }}
+                className={`rounded px-1 py-1 font-mono text-[10px] transition cursor-pointer ${
+                  normalized === t
+                    ? 'bg-cyan text-bg font-bold'
+                    : 'bg-bg/70 text-fg-muted hover:bg-cyan/15 hover:text-cyan'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -404,35 +640,29 @@ function ScenarioEditorCard({
 
       {/* Landing Window & Duration */}
       <div className="grid grid-cols-2 items-end gap-2 sm:grid-cols-12">
-        <div className="col-span-2 sm:col-span-4">
+        <div className="col-span-2 sm:col-span-5">
           <label className="label mb-1 flex items-center gap-1 whitespace-nowrap">
-            <Calendar className="size-3 text-cyan" /> Landing Date
+            <Calendar className="size-3 text-cyan" /> Landing Date (UTC)
           </label>
-          <input
-            type="date"
+          <UtcDateField
+            ariaLabel={`Plan ${badge} landing date`}
             value={cfg.landingDate}
-            onChange={(e) => {
-              if (e.target.value) onChange({ ...cfg, landingDate: e.target.value });
-            }}
-            className="field py-1.5 px-2 font-mono text-xs"
+            onCommit={(nextDate) => onChange({ ...cfg, landingDate: nextDate })}
           />
         </div>
 
         <div className="sm:col-span-3">
           <label className="label mb-1 block whitespace-nowrap">Time (UTC)</label>
-          <input
-            type="time"
+          <UtcTimeField
+            ariaLabel={`Plan ${badge} landing time`}
             value={cfg.landingTime}
-            onChange={(e) => {
-              if (e.target.value) onChange({ ...cfg, landingTime: e.target.value });
-            }}
-            className="field py-1.5 px-2 font-mono text-xs"
+            onChange={(nextTime) => onChange({ ...cfg, landingTime: nextTime })}
           />
         </div>
 
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-2" title="Mission duration on the lunar surface (1 to 45 Earth days)">
           <label className="label mb-1 flex items-center gap-1 whitespace-nowrap">
-            <Clock className="size-3 text-warning" /> Duration (d)
+            <Clock className="size-3 text-warning" /> Days
           </label>
           <NumericField
             ariaLabel={`Plan ${badge} duration days`}
@@ -445,7 +675,7 @@ function ScenarioEditorCard({
           />
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-2" title="Launch delay offset (+0 to +29 days) added to Landing Date to test later landing windows">
           <label className="label mb-1 block whitespace-nowrap">Delay (+d)</label>
           <NumericField
             ariaLabel={`Plan ${badge} launch offset days`}
@@ -460,6 +690,16 @@ function ScenarioEditorCard({
       </div>
 
       <p className="truncate font-mono text-[10px] text-fg-muted">
+        {cfg.delayDays > 0 && (
+          <span className="text-cyan">
+            Touchdown: {safeToUtcIso(cfg.landingDate, cfg.landingTime).slice(0, 10)} +{cfg.delayDays}d →{' '}
+            {new Date(Date.parse(safeToUtcIso(cfg.landingDate, cfg.landingTime)) + cfg.delayDays * 86_400_000)
+              .toISOString()
+              .slice(0, 16)
+              .replace('T', ' ')}{' '}
+            UTC •{' '}
+          </span>
+        )}
         {resolvedSite.program} • Slope {resolvedSite.slopeDeg}° • Water Ice {resolvedSite.waterIceDistanceKm} km
       </p>
     </div>
@@ -627,16 +867,9 @@ export default function SiteComparisonPage() {
     [siteB, landingUtcB, cfgB.durationDays, cfgB.delayDays, commsMode],
   );
 
-  const recommendation = useMemo(() => buildSiteAndDurationRecommendation(evalA, evalB), [evalA, evalB]);
+  const recommendedPlace: 'A' | 'B' =
+    evalA.suitability.overallScore >= evalB.suitability.overallScore ? 'A' : 'B';
   const pairDistanceKm = useMemo(() => computeSitePairDistanceKm(siteA, siteB), [siteA, siteB]);
-
-  const activeWinnerDuration =
-    recommendation.recommendedPlace === 'A' ? cfgA.durationDays : cfgB.durationDays;
-  const activeWinnerDelay =
-    recommendation.recommendedPlace === 'A' ? cfgA.delayDays : cfgB.delayDays;
-  const isOptimalApplied =
-    activeWinnerDuration === recommendation.recommendedDurationDays &&
-    activeWinnerDelay === recommendation.recommendedDelayDays;
 
   const radarBarData = useMemo(
     () => [
@@ -678,18 +911,6 @@ export default function SiteComparisonPage() {
         mode: remaining[0] ? 'queued' : 'preset',
         queuedId: remaining[0]?.id ?? '',
       }));
-    }
-  };
-
-  const applyRecommendedDurationAndWindow = () => {
-    const patch = {
-      durationDays: recommendation.recommendedDurationDays,
-      delayDays: recommendation.recommendedDelayDays,
-    };
-    if (recommendation.recommendedPlace === 'A') {
-      setCfgA((prev) => ({ ...prev, ...patch }));
-    } else {
-      setCfgB((prev) => ({ ...prev, ...patch }));
     }
   };
 
@@ -823,13 +1044,13 @@ export default function SiteComparisonPage() {
       )}
 
       {/* Plan A & Plan B Editors */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <section className="relative z-20 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ScenarioEditorCard
           badge="A"
           cfg={cfgA}
           resolvedSite={siteA}
           queuedScenarios={scenarios}
-          isWinner={recommendation.recommendedPlace === 'A'}
+          isWinner={recommendedPlace === 'A'}
           score={evalA.suitability.overallScore}
           hasExplorerCoords={Boolean(selectedCoords)}
           onChange={setCfgA}
@@ -851,7 +1072,7 @@ export default function SiteComparisonPage() {
           cfg={cfgB}
           resolvedSite={siteB}
           queuedScenarios={scenarios}
-          isWinner={recommendation.recommendedPlace === 'B'}
+          isWinner={recommendedPlace === 'B'}
           score={evalB.suitability.overallScore}
           hasExplorerCoords={Boolean(selectedCoords)}
           onChange={setCfgB}
@@ -867,138 +1088,6 @@ export default function SiteComparisonPage() {
           }}
           onSaveToQueue={() => savePlanToQueue('B')}
         />
-      </section>
-
-      {/* Recommended Site & Optimal Duration */}
-      <section className="card border-success/50 bg-panel/75 p-5">
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
-          <div className="space-y-3 xl:col-span-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="badge border-success/50 bg-success/15 text-success">
-                <Award className="mr-1 size-3.5" /> Recommended Site & Duration
-              </span>
-              <span className="font-mono text-xs text-fg-muted">
-                +{recommendation.scoreMargin} pts over Plan {recommendation.recommendedPlace === 'A' ? 'B' : 'A'}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap items-baseline gap-3">
-              <h2 className="text-lg font-bold text-fg">
-                Plan {recommendation.recommendedPlace}: {recommendation.recommendedSite.name}
-              </h2>
-              <span className="font-mono text-sm font-bold text-success">
-                Score {recommendation.winnerScore}/100
-              </span>
-            </div>
-
-            <ul className="space-y-1 text-xs text-fg-muted">
-              {recommendation.reasons.map((r) => (
-                <li key={r} className="flex items-start gap-1.5">
-                  <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" />
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
-
-            <p className="rounded border border-cyan/35 bg-cyan/10 px-3 py-2 text-xs text-cyan">
-              <Sparkles className="mr-1.5 inline size-3.5" />
-              {recommendation.tradeOffNote}
-            </p>
-          </div>
-
-          <div className="flex flex-col justify-between gap-3.5 rounded-card border border-line-strong bg-bg/70 p-4 xl:col-span-6">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="label">Optimal Duration & Launch Window</div>
-                <div className="mt-1 flex flex-wrap items-baseline gap-2 font-mono">
-                  <span className="text-xl font-bold text-warning">
-                    {recommendation.recommendedDurationDays} Days
-                  </span>
-                  <span className="text-xs text-fg-muted">
-                    (+{recommendation.recommendedDelayDays}d offset • {recommendation.recommendedScore}/100)
-                  </span>
-                </div>
-                <div className="mt-0.5 font-mono text-[11px] text-fg-muted">
-                  Window: {recommendation.recommendedLandingUtc.slice(0, 16).replace('T', ' ')} UTC
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={applyRecommendedDurationAndWindow}
-                disabled={isOptimalApplied}
-                className={`btn py-1.5 px-3 text-xs ${
-                  isOptimalApplied
-                    ? 'border-success/50 bg-success/15 text-success cursor-default'
-                    : 'btn-primary cursor-pointer'
-                }`}
-              >
-                {isOptimalApplied ? (
-                  <>
-                    <Check className="size-3.5" /> Optimal Active
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="size-3.5" /> Apply Optimal
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Duration Sweep for active window */}
-            <div>
-              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider text-fg-dim">
-                <span>
-                  Duration Sweep · Plan {recommendation.recommendedPlace} (+{activeWinnerDelay}d offset)
-                </span>
-                <span className="font-mono normal-case text-[10px]">
-                  <span className="text-cyan">● Selected</span> · <span className="text-success">★ Best</span>
-                </span>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-8">
-                {recommendation.durationCandidates.map((cand) => {
-                  const isSelected = cand.durationDays === activeWinnerDuration;
-                  const isBest = cand.durationDays === recommendation.bestWindowDurationDays;
-                  return (
-                    <button
-                      key={cand.durationDays}
-                      type="button"
-                      aria-pressed={isSelected}
-                      title={`${cand.durationDays} days at +${activeWinnerDelay}d offset — Score ${cand.overallScore}/100${isBest ? ' (Best for this window)' : ''}`}
-                      onClick={() => {
-                        if (recommendation.recommendedPlace === 'A') {
-                          setCfgA((p) => ({ ...p, durationDays: cand.durationDays }));
-                        } else {
-                          setCfgB((p) => ({ ...p, durationDays: cand.durationDays }));
-                        }
-                      }}
-                      className={`relative rounded border px-1.5 py-1.5 text-center font-mono transition cursor-pointer ${
-                        isSelected && isBest
-                          ? 'border-success bg-success/25 text-success ring-1 ring-success/60'
-                          : isSelected
-                            ? 'border-cyan bg-cyan/20 text-cyan ring-1 ring-cyan/60'
-                            : isBest
-                              ? 'border-success/60 bg-success/10 text-success hover:bg-success/20'
-                              : 'border-line bg-bg-secondary/70 text-fg-muted hover:border-cyan/50 hover:text-fg'
-                      }`}
-                    >
-                      {isBest && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute right-1 top-0.5 text-[9px] leading-none text-success"
-                        >
-                          ★
-                        </span>
-                      )}
-                      <div className="whitespace-nowrap text-[11px] font-bold">{cand.durationDays}d</div>
-                      <div className="text-[9px]">{cand.overallScore}pt</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Side-by-Side Comparison Table */}
