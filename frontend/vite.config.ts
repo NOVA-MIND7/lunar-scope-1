@@ -28,6 +28,12 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       chunkSizeWarningLimit: 1500,
+      rollupOptions: {
+        input: {
+          main: fileURLToPath(new URL('./index.html', import.meta.url)),
+          relay: fileURLToPath(new URL('./relay.html', import.meta.url)),
+        },
+      },
     },
     test: {
       environment: 'jsdom',

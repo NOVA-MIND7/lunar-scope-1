@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Lunar Relay Link Simulator</title>
+    <style>.tb{max-height:260px;overflow:auto}.badge{font-weight:700}</style>
+  </head>
+  <body>
+    <h1>Lunar Orbiter → Earth Satellite Relay Constellation</h1>
+    <p class="s">Three lunar relay satellites and three Earth GEO relays, phased 120° apart. A network link is available whenever at least one lunar-to-Earth path has line of sight.</p>
+    <div class="g">
+      <div class="c"><canvas id="earth" width="400" height="400"></canvas></div>
+      <div class="c"><canvas id="moon" width="400" height="400"></canvas></div>
+      <div class="c">
+        <div class="r">
+          <div><label for="dataSize">Data size (MB)</label><input id="dataSize" type="number" min="1" value="2048"></div>
+          <div><label for="rate">Rate (Mbit/s)</label><input id="rate" type="number" min="0.1" step="0.1" value="10"></div>
+        </div>
+        <button id="start" type="button">Start transmission</button>
+        <div class="k"><div><b id="status" class="badge">–</b><span>Network status</span></div><div><b id="delay">–</b><span>Best one-way delay</span></div><div><b id="path">–</b><span>Selected path</span></div></div>
+        <div class="progress"><div id="progressBar"></div></div>
+        <div class="res" id="transfer">Transmission not started.</div>
+        <input id="sl" type="range" min="0" value="0"><button id="pl" type="button">▶ Play</button><div class="res" id="sum"></div>
+      </div>
+      <div class="c wide"><canvas id="tl" width="900" height="120"></canvas></div>
+      <div class="c wide"><b>Network link windows</b><div class="tb"><table id="tb"></table></div></div>
+    </div>
+    <script type="module" src="/src/relay.ts"></script>
+  </body>
+</html>
