@@ -379,6 +379,50 @@ export default function App() {
           </div>
         </section>
 
+        {/* ORBITAL SATELLITE THERMAL & ELECTROSTATIC DUST MONITOR */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div className="bg-slate-950 border border-slate-800 rounded-lg p-3">
+            <div className="text-xs text-slate-400">Orbital IR Radiometer • Surface Temp</div>
+            <div
+              className={`text-xl font-bold font-mono mt-1 ${
+                currentPoint.surfaceTempC < -150 ? 'text-sky-300' : 'text-amber-300'
+              }`}
+            >
+              {currentPoint.surfaceTempC}°C
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              14-Day Range: <strong>{simA.minTempC}°C</strong> to <strong>{simA.maxTempC}°C</strong>
+            </div>
+          </div>
+
+          <div className="bg-slate-950 border border-slate-800 rounded-lg p-3">
+            <div className="text-xs text-slate-400">Orbital Dust Sensor • Lofting Hazard</div>
+            <div
+              className={`text-sm font-bold mt-1.5 ${
+                currentPoint.dustIndex >= 75
+                  ? 'text-rose-400'
+                  : currentPoint.dustIndex >= 40
+                  ? 'text-amber-300'
+                  : 'text-emerald-400'
+              }`}
+            >
+              {currentPoint.dustRisk}
+            </div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              Dust Index: <strong>{currentPoint.dustIndex}/100</strong> ({simA.highDustHours}h high-lofting)
+            </div>
+          </div>
+
+          <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex flex-col justify-between">
+            <div className="text-xs text-cyan-400 font-semibold">
+              🛰️ Mothership Remote Sensing Telemetry
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed mt-1">
+              {currentPoint.orbitalSensorNote}
+            </p>
+          </div>
+        </section>
+
         {/* STEP 3: INTERACTIVE VISUALIZATIONS (360° HORIZON + 3D TERRAIN) */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: 360° Lander Horizon Panorama */}
@@ -615,6 +659,7 @@ export default function App() {
             </table>
           </div>
         </section>
+
 
         
       </main>

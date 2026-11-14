@@ -2,6 +2,7 @@ import type { LandingSite } from '../data/landingSites';
 
 export type CommsMode = 'DTE_ONLY' | 'LLO_MOTHERSHIP' | 'NRHO_CONSTELLATION';
 export type SolarPanelMode = 'VERTICAL_TRACKING' | 'FLAT_HORIZONTAL';
+export type DustRiskLevel = 'LOW (STABLE)' | 'MODERATE (TERMINATOR)' | 'HIGH (ELECTROSTATIC LOFTING)';
 
 export interface EphemerisPoint {
   hourOffset: number;
@@ -17,6 +18,10 @@ export interface EphemerisPoint {
   hasOrbitalRelay: boolean;
   commsActive: boolean;
   solarWatts: number;
+  surfaceTempC: number;
+  dustRisk: DustRiskLevel;
+  dustIndex: number; // 0 to 100 scale
+  orbitalSensorNote: string;
 }
 
 export interface MissionSummary {
@@ -28,6 +33,9 @@ export interface MissionSummary {
   maxDarkHours: number;
   hoursUntilSunset: number;
   hoursUntilEarthset: number;
+  minTempC: number;
+  maxTempC: number;
+  highDustHours: number;
   verdict: 'GO - OPTIMAL' | 'GO WITH ORBITAL RELAY' | 'NO-GO (POWER/THERMAL RISK)';
 }
 
@@ -41,7 +49,7 @@ export function getTerrainElevationAtAzimuth(terrainMask: number[], azimuthDeg: 
   return terrainMask[idx0] * (1 - frac) + terrainMask[idx1] * frac;
 }
 
-// Compute Sun and Earth sky positions from lunar surface coordinates & timestamp
+// Compute Sun and Earth sky positions, surface temperature, and electrostatic dust lofting
 export function computeSkyPositions(
   site: LandingSite,
   dateMs: number,
@@ -54,11 +62,9 @@ export function computeSkyPositions(
   const rad2deg = 180 / Math.PI;
 
   const latRad = site.lat * deg2rad;
-  const lonRad = site.lon * deg2rad;
 
   // 1. Lunar Solar Ephemeris (Synodic period = 29.53059 days, Axial tilt to ecliptic = 1.5424°)
   const subSolarLonDeg = ((360 / 29.530589) * daysSinceJ2000) % 360;
-  // Seasonal solar sub-latitude (-1.54° to +1.54° over 346.6-day draconic year)
   const subSolarLatDeg = 1.5424 * Math.sin(((2 * Math.PI) / 346.62) * daysSinceJ2000);
 
   const hourAngleRad = (site.lon - subSolarLonDeg) * deg2rad;
@@ -67,7 +73,6 @@ export function computeSkyPositions(
   const sinSunEl =
     Math.sin(latRad) * Math.sin(decRad) +
     Math.cos(latRad) * Math.cos(decRad) * Math.cos(hourAngleRad);
-  // Adjust slightly for site altitude above lunar mean sphere (horizon dip)
   const altitudeDipDeg = 0.032 * Math.sqrt(Math.max(0, site.elevationMeters));
   const sunEl = Math.asin(Math.max(-1, Math.min(1, sinSunEl))) * rad2deg + altitudeDipDeg * 0.35;
 
@@ -95,18 +100,16 @@ export function computeSkyPositions(
     Math.sin(latRad) * Math.cos(earthDecRad) * Math.cos(earthHourAngleRad);
   const earthAz = ((Math.atan2(yEarth, xEarth) * rad2deg) % 360 + 360) % 360;
 
-  // 3. Terrain Horizon Mask Check (No atmosphere = sharp terrain occlusion)
+  // 3. Terrain Horizon Mask Check
   const sunTerrainEl = getTerrainElevationAtAzimuth(site.terrainMask, sunAz);
   const earthTerrainEl = getTerrainElevationAtAzimuth(site.terrainMask, earthAz);
 
   const isSunlit = sunEl > sunTerrainEl;
-  // Require +1.0° multipath clearance above ridge for clean Direct-to-Earth radio lock
   const hasDirectEarth = earthEl > earthTerrainEl + 1.0;
 
   // 4. Orbital Mothership & Relay Satellite Coverage
   let hasOrbitalRelay = false;
   if (commsMode === 'LLO_MOTHERSHIP') {
-    // Orbiting carrier satellite passes overhead every 2 hours
     hasOrbitalRelay = hourOffset % 2 === 0;
   } else if (commsMode === 'NRHO_CONSTELLATION') {
     hasOrbitalRelay = true;
@@ -119,13 +122,41 @@ export function computeSkyPositions(
   if (isSunlit) {
     const clampedElRad = Math.max(0.5, sunEl) * deg2rad;
     if (panelMode === 'VERTICAL_TRACKING') {
-      // Vertical Mast Arrays thrive when Sun skims the horizon (cos of low elevation is ~1.0)
       solarWatts = Math.round(400 * Math.cos(clampedElRad));
     } else {
-      // Flat Equatorial Arrays perform poorly at grazing polar angles (sin of low elevation)
       solarWatts = Math.round(400 * Math.sin(clampedElRad));
     }
   }
+
+  // 6. Electrostatic Dust Lofting Model (Terminator UV Charging + Solar/Comms Impact)
+  const sunAngleFromRidge = sunEl - sunTerrainEl;
+  const isTerminatorCrossing = Math.abs(sunAngleFromRidge) <= 2.2;
+  const dustIndex = isTerminatorCrossing
+    ? Math.round(72 + (2.2 - Math.abs(sunAngleFromRidge)) * 12)
+    : isSunlit
+    ? 18
+    : 12;
+
+  const dustRisk: DustRiskLevel =
+    dustIndex >= 75
+      ? 'HIGH (ELECTROSTATIC LOFTING)'
+      : dustIndex >= 40
+      ? 'MODERATE (TERMINATOR)'
+      : 'LOW (STABLE)';
+
+  if (dustIndex >= 75 && solarWatts > 0) {
+    solarWatts = Math.round(solarWatts * 0.82);
+  }
+
+  // 7. Instantaneous Surface Temperature (°C) & Orbiter Sensor Telemetry
+  const surfaceTempC = isSunlit ? Math.round(-25 + Math.max(0, sunEl) * 4.5) : -165;
+
+  const orbitalSensorNote =
+    dustIndex >= 75
+      ? 'LADEE-class Orbiter Alert: Terminator electrostatic dust cloud detected; Optical/Ka-Band scatter risk.'
+      : !isSunlit
+      ? 'IR Radiometer Alert: Rapid regolith cooling in ridge shadow; survival heaters active.'
+      : 'Nominal: Clear regolith surface & stable thermal equilibrium.';
 
   return {
     hourOffset,
@@ -141,6 +172,10 @@ export function computeSkyPositions(
     hasOrbitalRelay,
     commsActive,
     solarWatts,
+    surfaceTempC,
+    dustRisk,
+    dustIndex,
+    orbitalSensorNote,
   };
 }
 
@@ -151,7 +186,7 @@ export function simulateMissionWindow(
   delayDays: number,
   commsMode: CommsMode,
   panelMode: SolarPanelMode,
-  durationHours = 336 // 14 Earth days
+  durationHours = 336
 ): MissionSummary {
   const baseStartMs = new Date(startDateIso).getTime() + delayDays * 86400000;
   const points: EphemerisPoint[] = [];
@@ -162,17 +197,27 @@ export function simulateMissionWindow(
   let totalWatts = 0;
   let currentDarkStreak = 0;
   let maxDarkHours = 0;
+  let minTempC = 100;
+  let maxTempC = -273;
+  let highDustHours = 0;
 
   for (let h = 0; h < durationHours; h += 2) {
     const pt = computeSkyPositions(site, baseStartMs + h * 3600000, commsMode, panelMode, h);
-    points.push(pt);
+
     if (pt.isSunlit) {
       sunlitCount++;
       currentDarkStreak = 0;
     } else {
       currentDarkStreak += 2;
       if (currentDarkStreak > maxDarkHours) maxDarkHours = currentDarkStreak;
+      pt.surfaceTempC = Math.round(-225 + 65 * Math.exp(-currentDarkStreak / 18));
     }
+
+    if (pt.surfaceTempC < minTempC) minTempC = pt.surfaceTempC;
+    if (pt.surfaceTempC > maxTempC) maxTempC = pt.surfaceTempC;
+    if (pt.dustIndex >= 75) highDustHours += 2;
+
+    points.push(pt);
     if (pt.hasDirectEarth) dteCount++;
     if (pt.commsActive) commsCount++;
     totalWatts += pt.solarWatts;
@@ -184,7 +229,6 @@ export function simulateMissionWindow(
   const effectiveCommsPercent = Math.round((commsCount / totalSteps) * 100);
   const avgWatts = Math.round(totalWatts / totalSteps);
 
-  // Calculate countdown until next Sunset or Earthset from current hour 0
   let hoursUntilSunset = 0;
   for (const p of points) {
     if (p.isSunlit) hoursUntilSunset += 2;
@@ -212,6 +256,9 @@ export function simulateMissionWindow(
     maxDarkHours,
     hoursUntilSunset,
     hoursUntilEarthset,
+    minTempC,
+    maxTempC,
+    highDustHours,
     verdict,
   };
 }
@@ -236,5 +283,6 @@ export function findBestOrbitalReleaseDelay(
       bestSummary = sim;
     }
   }
+
   return { bestDelayDays, bestScore: Math.round(bestScore), summary: bestSummary };
 }
