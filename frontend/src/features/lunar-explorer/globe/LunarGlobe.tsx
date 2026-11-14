@@ -16,8 +16,10 @@ import { WebGLFallback } from './WebGLFallback';
 import { useGlobeStore } from './globeStore';
 import { useMoonTextures } from './useMoonTextures';
 import { CameraControlPanel } from './panels/CameraControlPanel';
+import { CassiniSouthPolePanel } from './panels/CassiniSouthPolePanel';
 import { CoordinateEntryPanel } from './panels/CoordinateEntryPanel';
 import { CoordinateReadout } from './panels/CoordinateReadout';
+import { DraggablePanel } from './panels/DraggablePanel';
 import { LayersPanel } from './panels/LayersPanel';
 import { PendingLocationBar } from './panels/PendingLocationBar';
 import { SiteInfoPanel } from './panels/SiteInfoPanel';
@@ -65,6 +67,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
   const sites = sitesQuery.data?.sites ?? NO_SITES;
   const { status, textures, error } = useMoonTextures(webgl);
   const setTextureSource = useGlobeStore((s) => s.setTextureSource);
+  const showSatellitePanel = useGlobeStore((s) => s.showSatellitePanel);
 
   const selectedSite = useAppStore((s) => s.selectedLandingSite);
   const previousSiteId = useRef(selectedSite?.id ?? null);
@@ -124,7 +127,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
           {textures ? (
             <Canvas
               key={canvasKey}
-              camera={{ fov: 40, near: 0.01, far: 200, position: [0, 0.6, 3.3] }}
+              camera={{ fov: 40, near: 0.01, far: 400, position: [0, 0.6, 3.3] }}
               dpr={[1, 2]}
               gl={{ antialias: true, powerPreference: 'high-performance' }}
               onCreated={({ gl }) => {
@@ -165,20 +168,33 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
 
       {isFull && floating ? (
         <>
-          <div className="pointer-events-none absolute left-3 top-3 z-10 flex max-h-[calc(100%-13.5rem)] w-64 flex-col gap-3 overflow-y-auto">
-            <div className="pointer-events-auto">
+          <DraggablePanel
+            id="nav-layers"
+            title="Navigation & Layers"
+            dock="left"
+            widthClassName="w-72"
+            maxHeightClassName="max-h-[calc(100vh-13.5rem)]"
+          >
+            <div className="flex flex-col gap-3">
               <CoordinateEntryPanel />
-            </div>
-            <div className="pointer-events-auto">
               <LayersPanel sites={sites} />
             </div>
-          </div>
-          <div className="pointer-events-none absolute right-3 top-3 z-10 flex max-h-[calc(100%-1.5rem)] w-72 flex-col gap-3 overflow-y-auto">
-            <div className="pointer-events-auto">{cameraPanel}</div>
-            <div className="pointer-events-auto">
+          </DraggablePanel>
+
+          <DraggablePanel
+            id="mission-controls"
+            title="Mission & Controls"
+            dock="right"
+            widthClassName="w-80"
+            maxHeightClassName="max-h-[calc(100vh-10rem)]"
+          >
+            <div className="flex flex-col gap-3">
+              <CameraControlPanel compact={false} fullscreen={isFull ? fullscreen : undefined} />
+              {showSatellitePanel ? <CassiniSouthPolePanel /> : null}
               <SiteInfoPanel />
             </div>
-          </div>
+          </DraggablePanel>
+
           <div className="pointer-events-none absolute bottom-3 left-3 z-10">
             <CoordinateReadout />
           </div>
@@ -192,6 +208,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
         <div className="grid gap-3 p-3 md:grid-cols-2">
           <div className="space-y-3">
             {cameraPanel}
+            {showSatellitePanel ? <CassiniSouthPolePanel /> : null}
             <PendingLocationBar />
             <CoordinateEntryPanel />
             <CoordinateReadout />

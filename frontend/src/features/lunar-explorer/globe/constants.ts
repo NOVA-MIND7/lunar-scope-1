@@ -1,12 +1,12 @@
 import type { SiteCategory } from '@/types';
 
 export const MIN_DISTANCE = 1.05; // ~87 km above the surface: close enough to inspect craters
-export const MAX_DISTANCE = 8;
+export const MAX_DISTANCE = 85; // Free zoom: seamless zoom from Moon surface all the way out to Sun and Earth orbits
 export const DEFAULT_DISTANCE = 3.4;
 export const DEFAULT_VIEW = { latitude_deg: 10, longitude_deg: 0 };
 /** Keep the camera this far (radians) from the poles so OrbitControls never hits its singularity. */
 export const POLAR_MARGIN = 0.02;
-export const MAX_PAN = 0.8;
+export const MAX_PAN = 60; // Generous space to pan across solar system
 
 export const SOUTH_POLE_VIEW = { latitude_deg: -86, longitude_deg: 0, distance: 2.6 };
 /** Illustrative boundary of the "south polar region" overlay. Not a formal definition. */
