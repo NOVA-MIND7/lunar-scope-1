@@ -204,6 +204,53 @@ function GreatCircleArc({ siteA, siteB }: { siteA: SolarSiteProfile; siteB: Sola
   return <Line points={points} color="#38bdf8" lineWidth={1.5} dashed dashSize={0.04} gapSize={0.025} />;
 }
 
+const MOON_MODEL_SCALE = 1 / 1.2718640565872192;
+
+/** Authentic NASA 3D Moon model loaded from moon.glb with photorealistic topography */
+function Moon3DGLBModel({
+  onPointerDown,
+  onClick,
+  onPointerMove,
+  onPointerOut,
+}: {
+  onPointerDown: (e: ThreeEvent<PointerEvent>) => void;
+  onClick: (e: ThreeEvent<MouseEvent>) => void;
+  onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
+  onPointerOut: () => void;
+}) {
+  const modelUrl = `${import.meta.env.BASE_URL}models/moon.glb`.replace(/\/+/g, '/');
+  const gltf = useGLTF(modelUrl);
+
+  const sceneClone = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        if (mesh.material) {
+          const mat = mesh.material as any;
+          mat.roughness = 0.92;
+          mat.metalness = 0.04;
+          mat.needsUpdate = true;
+        }
+      }
+    });
+    return clone;
+  }, [gltf.scene]);
+
+  return (
+    <primitive
+      object={sceneClone}
+      scale={MOON_MODEL_SCALE}
+      onPointerDown={onPointerDown}
+      onClick={onClick}
+      onPointerMove={onPointerMove}
+      onPointerOut={onPointerOut}
+    />
+  );
+}
+
 function OrbitalMoonScene({
   active,
   siteA,
@@ -293,9 +340,35 @@ function OrbitalMoonScene({
       {active && <ambientLight intensity={0.14} />}
       {active && <directionalLight position={sunVec.toArray()} intensity={2.6} color="#fff7ed" />}
 
+<<<<<<< HEAD
       {/* 3D Moon model (same GLB used across the system) */}
       <Suspense fallback={null}>
         <MoonGlbModel
+=======
+      {/* 3D Real Moon Model from moon.glb with authentic lunar topography */}
+      <Suspense
+        fallback={
+          <mesh
+            rotation={[0, TEXTURE_YAW, 0]}
+            onPointerDown={handlePointerDown}
+            onClick={handleClick}
+            onPointerMove={handlePointerMove}
+            onPointerOut={() => onHoverCoords(null)}
+          >
+            <sphereGeometry args={[1, 64, 64]} />
+            <meshStandardMaterial
+              map={moonMap}
+              bumpMap={moonBump ?? undefined}
+              bumpScale={moonBump ? 0.015 : 0}
+              color={moonMap ? '#eef2f6' : '#94a3b8'}
+              roughness={0.94}
+              metalness={0.03}
+            />
+          </mesh>
+        }
+      >
+        <Moon3DGLBModel
+>>>>>>> 31d48e2a7f4c2ee434424eff4bc96e02566a7f3b
           onPointerDown={handlePointerDown}
           onClick={handleClick}
           onPointerMove={handlePointerMove}

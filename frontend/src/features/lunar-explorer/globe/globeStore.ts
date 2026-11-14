@@ -74,6 +74,8 @@ interface GlobeState {
   isTimePlaying: boolean;
   astronomicalPhase: { percent: number; name: string; elongationDeg: number };
   focusTarget: 'moon' | 'earth' | 'sun';
+  /** Current Moon axial spin angle around Y in radians */
+  moonSpinAngle: number;
   /** Toggle visibility of floating 3D tabs/badges on satellites, Earth, Sun & ground stations */
   showTelemetryLabels: boolean;
   /** Mouse interaction mode for 3D Moon: rotate (orbit) vs pan (drag view) */
@@ -142,6 +144,7 @@ interface GlobeActions {
   setIsTimePlaying: (playing: boolean) => void;
   toggleTimePlaying: () => void;
   setAstronomicalPhase: (phase: { percent: number; name: string; elongationDeg: number }) => void;
+  setMoonSpinAngle: (angle: number) => void;
 }
 
 let commandCounter = 0;
@@ -194,6 +197,7 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   isTimePlaying: true,
   astronomicalPhase: { percent: 50, name: 'First Quarter', elongationDeg: 90 },
   focusTarget: 'moon',
+  moonSpinAngle: 0,
   showTelemetryLabels: true,
   interactionMode: 'rotate',
   visualizationMode: 'globe',
@@ -287,6 +291,7 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   setIsTimePlaying: (playing) => set({ isTimePlaying: playing }),
   toggleTimePlaying: () => set((s) => ({ isTimePlaying: !s.isTimePlaying })),
   setAstronomicalPhase: (phase) => set({ astronomicalPhase: phase }),
+  setMoonSpinAngle: (angle) => set({ moonSpinAngle: angle }),
 }));
 
 export const MAX_ZOOM_OUT = MAX_DISTANCE;

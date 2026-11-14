@@ -6,6 +6,7 @@ import { DEFAULT_DISTANCE, MAX_DISTANCE, MAX_PAN, MIN_DISTANCE, POLAR_MARGIN } f
 import { useGlobeStore, type CameraCommand } from './globeStore';
 import {
   clampDistance,
+  clampPolar,
   easeInOutCubic,
   focusGoal,
   resetGoal,
@@ -54,16 +55,28 @@ function startAnimation(camera: { position: Vector3 }, controls: Controls, goal:
 }
 
 function goalFor(command: CameraCommand, camera: { position: Vector3 }, controls: Controls, targetPos: Vector3): CameraGoal {
+  const spinAngle = useGlobeStore.getState().moonSpinAngle || 0;
   switch (command.kind) {
-    case 'reset':
-      return { ...resetGoal(), target: targetPos.clone() };
-    case 'southPole':
-      return { ...southPoleGoal(), target: targetPos.clone() };
-    case 'focus':
+    case 'reset': {
+      const base = resetGoal();
+      const dir = base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle);
+      return { direction: clampPolar(dir), distance: base.distance, target: targetPos.clone() };
+    }
+    case 'southPole': {
+      const base = southPoleGoal();
+      const dir = base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle);
+      return { direction: clampPolar(dir), distance: base.distance, target: targetPos.clone() };
+    }
+    case 'focus': {
+      const base = focusGoal(command.latitude_deg, command.longitude_deg, camera.position.distanceTo(controls.target), command.distance);
+      // Rotate the camera goal direction by the Moon's axial spin so the surface landmark rotates to directly face the camera
+      const dir = base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle);
       return {
-        ...focusGoal(command.latitude_deg, command.longitude_deg, camera.position.distanceTo(controls.target), command.distance),
+        direction: clampPolar(dir),
+        distance: base.distance,
         target: targetPos.clone(),
       };
+    }
     case 'zoom': {
       const rel = camera.position.clone().sub(controls.target);
       return { direction: rel.clone().normalize(), distance: clampDistance(rel.length() * command.factor), target: controls.target.clone() };

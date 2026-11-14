@@ -45,31 +45,93 @@ class SceneErrorBoundary extends Component<
   }
 }
 
-/** Moon surface textured sphere aligned so lon 0° faces +X (Earth). */
+const MOON_MODEL_NORM_SCALE = 1 / 1.2718640565872192; // 0.786247585
+
+/** 3D Moon model loaded from moon.glb with photorealistic topography */
+function CislunarMoonGLBModel() {
+  const modelUrl = `${import.meta.env.BASE_URL}models/moon.glb`.replace(/\/+/g, '/');
+  const gltf = useGLTF(modelUrl);
+
+  const sceneClone = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        if (mesh.material) {
+          const mat = mesh.material as any;
+          mat.roughness = 0.92;
+          mat.metalness = 0.04;
+          mat.needsUpdate = true;
+        }
+      }
+    });
+    return clone;
+  }, [gltf.scene]);
+
+  const scale = MOON_RADIUS_SCENE * MOON_MODEL_NORM_SCALE;
+
+  return <primitive object={sceneClone} scale={scale} />;
+}
+
+/** Moon surface 3D model aligned so lon 0° faces +X (Earth). */
 function CislunarMoonMesh() {
   const { textures } = useMoonTextures();
   return (
     <group position={[MOON_CENTER[0], MOON_CENTER[1], MOON_CENTER[2]]} rotation={[0, Math.PI / 2, 0]}>
-      <mesh rotation={[0, TEXTURE_YAW, 0]} receiveShadow castShadow>
-        <sphereGeometry args={[MOON_RADIUS_SCENE, 56, 56]} />
-        {textures ? (
-          <meshStandardMaterial
-            key="moon-textured"
-            map={textures.map}
-            bumpMap={textures.bump}
-            bumpScale={0.042}
-            roughness={textures.bump ? 0.92 : 0.85}
-            metalness={0.04}
-          />
-        ) : (
-          <meshStandardMaterial key="moon-placeholder" color="#6f7785" roughness={0.9} metalness={0.04} />
-        )}
-      </mesh>
+      <Suspense
+        fallback={
+          <mesh rotation={[0, TEXTURE_YAW, 0]} receiveShadow castShadow>
+            <sphereGeometry args={[MOON_RADIUS_SCENE, 56, 56]} />
+            {textures ? (
+              <meshStandardMaterial
+                key="moon-textured"
+                map={textures.map}
+                bumpMap={textures.bump}
+                bumpScale={0.042}
+                roughness={textures.bump ? 0.92 : 0.85}
+                metalness={0.04}
+              />
+            ) : (
+              <meshStandardMaterial key="moon-placeholder" color="#6f7785" roughness={0.9} metalness={0.04} />
+            )}
+          </mesh>
+        }
+      >
+        <CislunarMoonGLBModel />
+      </Suspense>
     </group>
   );
 }
 
-/** Earth surface textured sphere with clouds + Rayleigh blue glow rim. */
+/** Official NASA 3D Earth model loaded from earth.glb */
+function CislunarEarthGLBModel({ scale }: { scale: number }) {
+  const modelUrl = `${import.meta.env.BASE_URL}models/earth.glb`.replace(/\/+/g, '/');
+  const gltf = useGLTF(modelUrl);
+
+  const sceneClone = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        if (mesh.material) {
+          const mat = mesh.material as any;
+          mat.roughness = 0.65;
+          mat.metalness = 0.08;
+          mat.needsUpdate = true;
+        }
+      }
+    });
+    return clone;
+  }, [gltf.scene]);
+
+  return <primitive object={sceneClone} scale={scale} />;
+}
+
+/** Earth surface 3D model with clouds + Rayleigh blue glow rim. */
 function CislunarEarthMesh({ spinRef }: { spinRef: React.RefObject<THREE.Group | null> }) {
   const [colorTex, setColorTex] = useState<THREE.Texture | null>(null);
   const [cloudTex, setCloudTex] = useState<THREE.Texture | null>(null);
@@ -87,19 +149,27 @@ function CislunarEarthMesh({ spinRef }: { spinRef: React.RefObject<THREE.Group |
     });
   }, []);
 
+  const earthModelScale = (EARTH_RADIUS_SCENE * 2) / 1000;
+
   return (
     <group position={[EARTH_CENTER[0], EARTH_CENTER[1], EARTH_CENTER[2]]}>
       {/* Earth axial tilt (23.5°) matching earthLatLonToWorld */}
       <group rotation={[(23.5 * Math.PI) / 180, 0, 0]}>
         <group ref={spinRef} rotation={[0, -Math.PI * 0.35, 0]}>
-          <mesh rotation={[0, TEXTURE_YAW, 0]} receiveShadow castShadow>
-            <sphereGeometry args={[EARTH_RADIUS_SCENE, 48, 48]} />
-            {colorTex ? (
-              <meshStandardMaterial map={colorTex} roughness={0.62} metalness={0.08} />
-            ) : (
-              <meshStandardMaterial color="#1d4ed8" roughness={0.6} />
-            )}
-          </mesh>
+          <Suspense
+            fallback={
+              <mesh rotation={[0, TEXTURE_YAW, 0]} receiveShadow castShadow>
+                <sphereGeometry args={[EARTH_RADIUS_SCENE, 48, 48]} />
+                {colorTex ? (
+                  <meshStandardMaterial map={colorTex} roughness={0.62} metalness={0.08} />
+                ) : (
+                  <meshStandardMaterial color="#1d4ed8" roughness={0.6} />
+                )}
+              </mesh>
+            }
+          >
+            <CislunarEarthGLBModel scale={earthModelScale} />
+          </Suspense>
           <mesh rotation={[0, TEXTURE_YAW, 0]}>
             <sphereGeometry args={[EARTH_RADIUS_SCENE * 1.016, 40, 40]} />
             {cloudTex ? (
