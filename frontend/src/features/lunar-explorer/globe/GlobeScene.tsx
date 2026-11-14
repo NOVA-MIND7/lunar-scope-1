@@ -111,6 +111,7 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
     if (moonSpinRef.current) {
       moonSpinRef.current.rotation.y = astro.moonSpinAngleRad;
     }
+    useGlobeStore.getState().moonSpinAngle = astro.moonSpinAngleRad;
 
     if (earthGroupRef.current) {
       earthGroupRef.current.position.set(ex, ey, ez);
