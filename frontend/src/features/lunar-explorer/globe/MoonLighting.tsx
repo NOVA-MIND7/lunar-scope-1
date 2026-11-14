@@ -21,22 +21,18 @@ export const MoonLighting = memo(function MoonLighting({
   sunDirection,
   sunVisible,
   intensity,
-  eclipseFactor = 0,
 }: MoonLightingProps) {
   const position = useMemo(
     () => new Vector3(...sunDirection).normalize().multiplyScalar(SUN_DISTANCE).toArray() as [number, number, number],
     [sunDirection],
   );
 
-  const isEclipsed = eclipseFactor > 0.1;
-  const lightIntensity = sunVisible ? intensity * Math.max(0.04, 1.0 - eclipseFactor * 0.96) : 0;
-  // Blood-moon crimson tint during lunar eclipse, crisp solar white otherwise
-  const lightColor = isEclipsed ? '#b91c1c' : '#fff8ee';
-
   return (
     <>
-      <ambientLight intensity={isEclipsed ? 0.04 : 0.08} color={isEclipsed ? '#450a0a' : '#9db4d0'} />
-      <directionalLight position={position} intensity={lightIntensity} color={lightColor} />
+      {/* Constant solar system ambient light so Earth and celestial objects stay clearly lit */}
+      <ambientLight intensity={0.4} color="#cbd5e1" />
+      {/* Directional sunlight from Sun */}
+      <directionalLight position={position} intensity={sunVisible ? intensity : 0} color="#fffbee" />
     </>
   );
 });

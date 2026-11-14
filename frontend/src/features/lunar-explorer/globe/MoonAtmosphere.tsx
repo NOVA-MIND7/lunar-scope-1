@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo } from 'react';
 import { AdditiveBlending, BackSide, Color, ShaderMaterial, SphereGeometry, Vector3 } from 'three';
+import { useGlobeStore } from './globeStore';
 
 const vertexShader = /* glsl */ `
   varying vec3 vNormalW;
@@ -57,10 +58,13 @@ export const MoonAtmosphere = memo(function MoonAtmosphere({
     [],
   );
 
+  const eclipseFactor = useGlobeStore((s) => s.eclipseFactor);
+
   useEffect(() => {
     (material.uniforms.uSun!.value as Vector3).set(...sunDirection).normalize();
-    material.uniforms.uIntensity!.value = intensity;
-  }, [material, sunDirection, intensity]);
+    const factor = eclipseFactor;
+    material.uniforms.uIntensity!.value = intensity * Math.max(0.1, 1.0 - factor * 0.9);
+  }, [material, sunDirection, intensity, eclipseFactor]);
 
   useEffect(
     () => () => {

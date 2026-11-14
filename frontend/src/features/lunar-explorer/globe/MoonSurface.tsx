@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useThree, type ThreeEvent } from '@react-three/fiber';
 import { useCursor, useGLTF } from '@react-three/drei';
-import { SphereGeometry, type Mesh } from 'three';
+import { Color, SphereGeometry, type Mesh } from 'three';
 import { TEXTURE_YAW, vector3ToLatLon } from '@/utils/lunarCoordinates';
 import { MIN_DISTANCE } from './constants';
 import { useGlobeStore } from './globeStore';
@@ -33,6 +33,7 @@ function MoonSmallModel({
 }: SurfaceInteractionProps) {
   const modelUrl = `${import.meta.env.BASE_URL}models/moon.glb`.replace(/\/+/g, '/');
   const gltf = useGLTF(modelUrl);
+  const eclipseFactor = useGlobeStore((s) => s.eclipseFactor);
 
   const sceneClone = useMemo(() => {
     const clone = gltf.scene.clone(true);
@@ -51,6 +52,26 @@ function MoonSmallModel({
     });
     return clone;
   }, [gltf.scene]);
+
+  useEffect(() => {
+    // When Moon passes behind Earth (Lunar Eclipse), only the Moon darkens!
+    // factor = 0: normal bright lunar surface (1, 1, 1)
+    // factor = 1: deep umbral shadow with dark blood-red tone (0.16, 0.04, 0.04)
+    const factor = eclipseFactor;
+    const r = Math.max(0.16, 1.0 - factor * 0.84);
+    const g = Math.max(0.04, 1.0 - factor * 0.96);
+    const b = Math.max(0.04, 1.0 - factor * 0.96);
+
+    sceneClone.traverse((child) => {
+      if ((child as Mesh).isMesh) {
+        const mat = (child as Mesh).material as any;
+        if (mat && mat.color) {
+          mat.color.setRGB(r, g, b);
+          mat.needsUpdate = true;
+        }
+      }
+    });
+  }, [eclipseFactor, sceneClone]);
 
   useEffect(() => {
     // Notify the UI that the real 3D Moon model is active
@@ -91,6 +112,15 @@ function SphereFallback({
   }, [textures, maxAnisotropy]);
 
   const isProcedural = textures.source.kind === 'procedural';
+  const eclipseFactor = useGlobeStore((s) => s.eclipseFactor);
+  const eclipseColor = useMemo(() => {
+    const factor = eclipseFactor;
+    return new Color(
+      Math.max(0.16, 1.0 - factor * 0.84),
+      Math.max(0.04, 1.0 - factor * 0.96),
+      Math.max(0.04, 1.0 - factor * 0.96),
+    );
+  }, [eclipseFactor]);
 
   return (
     <mesh
@@ -109,6 +139,7 @@ function SphereFallback({
         bumpScale={isProcedural ? 5 : 2}
         roughness={1}
         metalness={0}
+        color={eclipseColor}
       />
     </mesh>
   );

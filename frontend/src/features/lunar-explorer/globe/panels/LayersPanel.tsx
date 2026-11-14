@@ -23,6 +23,10 @@ export function LayersPanel({ sites }: { sites: LandingSite[] }) {
   const toggleSolarRays = useGlobeStore((s) => s.toggleSolarRays);
   const showEarth = useGlobeStore((s) => s.showEarth);
   const toggleEarth = useGlobeStore((s) => s.toggleEarth);
+  const showEarthSatellites = useGlobeStore((s) => s.showEarthSatellites);
+  const toggleEarthSatellites = useGlobeStore((s) => s.toggleEarthSatellites);
+  const showEarthOrbitPath = useGlobeStore((s) => s.showEarthOrbitPath);
+  const toggleEarthOrbitPath = useGlobeStore((s) => s.toggleEarthOrbitPath);
   const autoRotate = useGlobeStore((s) => s.autoRotate);
   const toggleAutoRotate = useGlobeStore((s) => s.toggleAutoRotate);
   const count = (c: SiteCategory) => sites.filter((s) => s.category === c).length;
@@ -57,6 +61,25 @@ export function LayersPanel({ sites }: { sites: LandingSite[] }) {
             <span className="flex-1 font-medium">Earth 3D Body (between Sun & Moon)</span>
           </label>
         </li>
+        {showEarth ? (
+          <>
+            <li className="pl-5">
+              <label className="flex cursor-pointer items-center gap-2 text-cyan">
+                <input type="checkbox" className="accent-cyan" checked={showEarthSatellites} onChange={toggleEarthSatellites} />
+                <Satellite className="size-3.5" />
+                <span className="flex-1 font-medium">Earth Satellites (satellite.obj)</span>
+              </label>
+            </li>
+            {showEarthSatellites ? (
+              <li className="pl-10">
+                <label className="flex cursor-pointer items-center gap-2 text-fg-dim">
+                  <input type="checkbox" className="accent-cyan" checked={showEarthOrbitPath} onChange={toggleEarthOrbitPath} />
+                  <span>3 Orbital Paths (LEO / SSO / HEO)</span>
+                </label>
+              </li>
+            ) : null}
+          </>
+        ) : null}
         <li className="pt-1 border-t border-line">
           <label className="flex cursor-pointer items-center gap-2 text-amber-400">
             <input type="checkbox" className="accent-amber-400" checked={showSun} onChange={toggleSun} />

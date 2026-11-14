@@ -62,6 +62,9 @@ interface GlobeState {
   showSolarRays: boolean;
   /** Earth 3D Celestial model and planetary rotation */
   showEarth: boolean;
+  showEarthSatellites: boolean;
+  showEarthOrbitPath: boolean;
+  selectedEarthPath: 1 | 2 | 3;
   autoRotate: boolean;
   planetaryRotationSpeed: number;
   focusTarget: 'moon' | 'earth' | 'sun';
@@ -109,6 +112,9 @@ interface GlobeActions {
   alignWithSun: (direction?: readonly [number, number, number]) => void;
   /** Earth & Rotation actions */
   toggleEarth: () => void;
+  toggleEarthSatellites: () => void;
+  toggleEarthOrbitPath: () => void;
+  setSelectedEarthPath: (path: 1 | 2 | 3) => void;
   toggleAutoRotate: () => void;
   setPlanetaryRotationSpeed: (speed: number) => void;
   alignWithEarth: () => void;
@@ -158,6 +164,9 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   showSun: true,
   showSolarRays: true,
   showEarth: true,
+  showEarthSatellites: true,
+  showEarthOrbitPath: true,
+  selectedEarthPath: 1,
   autoRotate: true,
   planetaryRotationSpeed: 1.0,
   focusTarget: 'moon',
@@ -222,6 +231,9 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   toggleSun: () => set((s) => ({ showSun: !s.showSun })),
   toggleSolarRays: () => set((s) => ({ showSolarRays: !s.showSolarRays })),
   toggleEarth: () => set((s) => ({ showEarth: !s.showEarth })),
+  toggleEarthSatellites: () => set((s) => ({ showEarthSatellites: !s.showEarthSatellites })),
+  toggleEarthOrbitPath: () => set((s) => ({ showEarthOrbitPath: !s.showEarthOrbitPath })),
+  setSelectedEarthPath: (path) => set({ selectedEarthPath: path }),
   toggleAutoRotate: () => set((s) => ({ autoRotate: !s.autoRotate })),
   setPlanetaryRotationSpeed: (speed) => set({ planetaryRotationSpeed: speed }),
   alignWithEarth: () => {
