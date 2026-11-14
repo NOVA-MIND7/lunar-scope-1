@@ -49,7 +49,7 @@ beforeEach(() => {
 describe('routing and shell', () => {
   it('declares every route, including the footer pages', () => {
     expect(ROUTES.map((r) => r.path)).toEqual([
-      '/', '/explorer', '/navigator', '/solar', '/earth', '/timeline', '/compare', '/terrain',
+      '/', '/explorer', '/navigator', '/solar', '/earth', '/comms', '/timeline', '/compare', '/terrain',
       '/recommendations', '/reports', '/data-sources', '/settings', '/status',
     ]);
   });
