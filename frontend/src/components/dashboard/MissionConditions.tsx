@@ -1,9 +1,8 @@
-import { Sun, Satellite, ClipboardList, Crosshair } from 'lucide-react';
+﻿import { Sun, Satellite, ClipboardList, Crosshair } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MissionPanel } from '@/components/common/MissionPanel';
 import { DataRow } from '@/components/common/DataRow';
 import { EmptyState } from '@/components/common/EmptyState';
-import { DataSourceBadge } from '@/components/common/DataSourceBadge';
 import { StatusIndicator } from '@/components/common/StatusIndicator';
 import { useAppStore } from '@/stores/appStore';
 import { useBackendStatus } from '@/hooks/useBackendStatus';
@@ -69,7 +68,6 @@ export function MissionStatus() {
   const date = useAppStore((s) => s.selectedLandingDate);
   const time = useAppStore((s) => s.selectedLandingTime);
   const duration = useAppStore((s) => s.selectedMissionDuration);
-  const dataMode = useAppStore((s) => s.dataMode);
   const backend = useBackendStatus();
 
   return (
@@ -82,11 +80,8 @@ export function MissionStatus() {
           {date} · {time}
         </DataRow>
         <DataRow label="Duration">{pluralDays(duration)}</DataRow>
-        <DataRow label="Data source" mono={false}>
-          <span className="inline-flex items-center gap-2">
-            <DataSourceBadge kind={dataMode === 'sample' ? 'sample' : 'computed'} label={dataMode === 'sample' ? 'Sample' : 'Live'} />
-            <StatusIndicator state={backend.state} label={`API ${backend.label.toLowerCase()}`} />
-          </span>
+        <DataRow label="Backend" mono={false}>
+          <StatusIndicator state={backend.state} label={`API ${backend.label.toLowerCase()}`} />
         </DataRow>
       </dl>
       <p className="mt-3 text-[11px] text-fg-dim">

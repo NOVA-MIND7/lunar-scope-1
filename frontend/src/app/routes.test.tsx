@@ -88,14 +88,14 @@ describe('routing and shell', () => {
     renderAt('/');
     await user.click(screen.getByRole('button', { name: 'Open navigation' }));
     const drawer = screen.getByTestId('mobile-nav');
-    await user.click(within(drawer).getByRole('link', { name: 'Solar Analysis' }));
+    await user.click(within(drawer).getByRole('link', { name: 'Settings' }));
     expect(screen.queryByTestId('mobile-nav')).not.toBeInTheDocument();
-    expect(await screen.findByTestId('not-implemented', {}, { timeout: 10000 })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('shows the not-implemented notice instead of invented numbers on science pages', async () => {
+  it('renders solar analysis page', async () => {
     renderAt('/solar');
-    expect(await screen.findByTestId('not-implemented')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Solar/i })).toBeInTheDocument();
   });
 
   it.each([

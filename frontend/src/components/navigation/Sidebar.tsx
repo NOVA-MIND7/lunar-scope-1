@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
-import { FOOTER_ROUTES, MAIN_ROUTES, type RouteDef } from '@/constants/routes';
+import { FOOTER_ROUTES, MAIN_ROUTES, isRouteVisibleForMode, type RouteDef } from '@/constants/routes';
+import { useAppStore } from '@/stores/appStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useBackendStatus } from '@/hooks/useBackendStatus';
 import { StatusIndicator } from '@/components/common/StatusIndicator';
@@ -62,12 +63,15 @@ export function SidebarContent({
   showCollapseToggle?: boolean;
 }) {
   const toggle = useUiStore((s) => s.toggleSidebar);
+  const uiMode = useAppStore((s) => s.uiMode);
+  const mainRoutes = MAIN_ROUTES.filter((r) => isRouteVisibleForMode(r, uiMode));
+  const footerRoutes = FOOTER_ROUTES.filter((r) => isRouteVisibleForMode(r, uiMode));
   return (
     <>
       <Brand collapsed={collapsed} />
       <nav className="flex-1 overflow-y-auto p-2.5" aria-label="Primary">
         <ul className="space-y-0.5">
-          {MAIN_ROUTES.map((r) => (
+          {mainRoutes.map((r) => (
             <li key={r.path}>
               <NavItem route={r} collapsed={collapsed} onNavigate={onNavigate} />
             </li>
@@ -76,7 +80,7 @@ export function SidebarContent({
       </nav>
       <nav className="border-t border-line p-2.5" aria-label="Secondary">
         <ul className="space-y-0.5">
-          {FOOTER_ROUTES.map((r) => (
+          {footerRoutes.map((r) => (
             <li key={r.path}>
               <NavItem route={r} collapsed={collapsed} onNavigate={onNavigate} />
             </li>

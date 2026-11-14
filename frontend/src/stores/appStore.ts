@@ -18,7 +18,7 @@ export function createInitialState(): AppState {
     isSimulationPlaying: false,
     comparisonScenarios: [],
     activeVisualization: 'globe',
-    dataMode: 'sample',
+    uiMode: 'scientific',
   };
 }
 
@@ -61,5 +61,5 @@ export const useAppStore = create<AppStore>()((set) => ({
   clearComparisonScenarios: () => set({ comparisonScenarios: [] }),
 
   setActiveVisualization: (id) => set({ activeVisualization: id }),
-  setDataMode: (mode) => set({ dataMode: mode }),
+  setUIMode: (mode) => set({ uiMode: mode }),
 }));

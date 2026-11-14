@@ -1,16 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
+import { Html, Line, OrbitControls, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Compass, Eye, Globe2, Mountain, RotateCcw, Sun } from 'lucide-react';
 import {
   latLonToVector3,
-  TEXTURE_YAW,
   vector3ToLatLon,
 } from '@/utils/lunarCoordinates';
 import { isWebGLAvailable } from '@/utils/webgl';
-import { useMoonTextures } from '../lunar-explorer/globe/useMoonTextures';
 import {
   SOLAR_PRESET_SITES,
   type SolarEphemerisPoint,
@@ -38,6 +36,51 @@ type CameraFocusPreset = {
   id: number;
   position: [number, number, number];
 };
+
+const MOON_MODEL_SCALE = 1 / 1.2718640565872192;
+
+function MoonGlbModel({
+  onPointerDown,
+  onClick,
+  onPointerMove,
+  onPointerOut,
+}: {
+  onPointerDown: (e: ThreeEvent<PointerEvent>) => void;
+  onClick: (e: ThreeEvent<MouseEvent>) => void;
+  onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
+  onPointerOut: () => void;
+}) {
+  const modelUrl = `${import.meta.env.BASE_URL}models/moon.glb`.replace(/\/+/g, '/');
+  const gltf = useGLTF(modelUrl);
+  const sceneClone = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        const mat = mesh.material as THREE.MeshStandardMaterial | undefined;
+        if (mat) {
+          mat.roughness = 0.92;
+          mat.metalness = 0.04;
+          mat.needsUpdate = true;
+        }
+      }
+    });
+    return clone;
+  }, [gltf.scene]);
+
+  return (
+    <primitive
+      object={sceneClone}
+      scale={MOON_MODEL_SCALE}
+      onPointerDown={onPointerDown}
+      onClick={onClick}
+      onPointerMove={onPointerMove}
+      onPointerOut={onPointerOut}
+    />
+  );
+}
 
 function FrontLabel({
   position,
@@ -172,8 +215,6 @@ function OrbitalMoonScene({
   onSelectPresetSite,
   onHoverCoords,
   focusPreset,
-  moonMap,
-  moonBump,
 }: {
   active: boolean;
   siteA: SolarSiteProfile;
@@ -185,8 +226,6 @@ function OrbitalMoonScene({
   onSelectPresetSite: (target: GlobePickTarget, siteId: string) => void;
   onHoverCoords: (coords: { lat: number; lon: number } | null) => void;
   focusPreset: CameraFocusPreset | null;
-  moonMap?: THREE.Texture;
-  moonBump?: THREE.Texture | null;
 }) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const { camera } = useThree();
@@ -254,24 +293,15 @@ function OrbitalMoonScene({
       {active && <ambientLight intensity={0.14} />}
       {active && <directionalLight position={sunVec.toArray()} intensity={2.6} color="#fff7ed" />}
 
-      {/* Moon Sphere aligned with LUNAR SCOPE coordinates */}
-      <mesh
-        rotation={[0, TEXTURE_YAW, 0]}
-        onPointerDown={handlePointerDown}
-        onClick={handleClick}
-        onPointerMove={handlePointerMove}
-        onPointerOut={() => onHoverCoords(null)}
-      >
-        <sphereGeometry args={[1, 64, 64]} />
-        <meshStandardMaterial
-          map={moonMap}
-          bumpMap={moonBump ?? undefined}
-          bumpScale={moonBump ? 0.015 : 0}
-          color={moonMap ? '#eef2f6' : '#94a3b8'}
-          roughness={0.94}
-          metalness={0.03}
+      {/* 3D Moon model (same GLB used across the system) */}
+      <Suspense fallback={null}>
+        <MoonGlbModel
+          onPointerDown={handlePointerDown}
+          onClick={handleClick}
+          onPointerMove={handlePointerMove}
+          onPointerOut={() => onHoverCoords(null)}
         />
-      </mesh>
+      </Suspense>
 
       {/* -80°S Polar Reference Ring */}
       <Line points={southPolarCircle} color="#00d9ff" lineWidth={1} transparent opacity={0.45} />
@@ -480,7 +510,6 @@ export function SolarGlobeSim({
   useTerrainHorizon,
 }: SolarGlobeSimProps) {
   const webgl = useMemo(() => isWebGLAvailable(), []);
-  const { textures } = useMoonTextures(webgl);
   const [viewMode, setViewMode] = useState<GlobeSimViewMode>('ORBITAL');
   const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [focusPreset, setFocusPreset] = useState<CameraFocusPreset | null>({
@@ -597,8 +626,6 @@ export function SolarGlobeSim({
               onSelectPresetSite={onSelectPresetSite}
               onHoverCoords={setHoverCoords}
               focusPreset={focusPreset}
-              moonMap={textures?.map}
-              moonBump={textures?.bump}
             />
             <LocalTerrainShadowScene
               active={viewMode !== 'ORBITAL'}

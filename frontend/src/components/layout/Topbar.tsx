@@ -1,12 +1,11 @@
 import { useLocation } from 'react-router-dom';
-import { Menu, UserRound, MapPin, Flag } from 'lucide-react';
+import { Menu, UserRound, MapPin, Flag, FlaskConical } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAppStore } from '@/stores/appStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useUtcClock } from '@/hooks/useUtcClock';
 import { useBackendStatus } from '@/hooks/useBackendStatus';
 import { StatusIndicator } from '@/components/common/StatusIndicator';
-import { DataSourceBadge } from '@/components/common/DataSourceBadge';
 import { formatLatitude, formatLongitude } from '@/utils/format';
 
 function pad(n: number) {
@@ -18,7 +17,8 @@ export function Topbar() {
   const section = ROUTES.find((r) => r.path === pathname)?.label ?? 'Not found';
   const missionName = useAppStore((s) => s.missionName);
   const site = useAppStore((s) => s.selectedLandingSite);
-  const dataMode = useAppStore((s) => s.dataMode);
+  const uiMode = useAppStore((s) => s.uiMode);
+  const setUIMode = useAppStore((s) => s.setUIMode);
   const setMobileOpen = useUiStore((s) => s.setMobileNavOpen);
   const now = useUtcClock();
   const backend = useBackendStatus();
@@ -74,6 +74,25 @@ export function Topbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3 md:gap-4">
+        <div className="hidden sm:flex items-center rounded border border-line bg-bg/60 p-0.5 text-[11px]" role="group" aria-label="UI mode">
+          <button
+            type="button"
+            onClick={() => setUIMode('basic')}
+            className={`rounded px-2 py-0.5 font-medium transition ${uiMode === 'basic' ? 'bg-cyan/20 text-cyan' : 'text-fg-muted hover:text-fg'}`}
+            title="Basic mode: simplified views and core features"
+          >
+            Basic
+          </button>
+          <button
+            type="button"
+            onClick={() => setUIMode('scientific')}
+            className={`flex items-center gap-1 rounded px-2 py-0.5 font-medium transition ${uiMode === 'scientific' ? 'bg-cyan/20 text-cyan' : 'text-fg-muted hover:text-fg'}`}
+            title="Scientific mode: full analysis and telemetry"
+          >
+            <FlaskConical className="size-3" aria-hidden /> Scientific
+          </button>
+        </div>
+
         <div className="text-right leading-tight" title="Coordinated Universal Time (current wall clock)">
           <p className="font-mono text-sm tabular-nums text-fg" data-testid="utc-clock">
             {time} <span className="text-[10px] text-cyan">UTC</span>
@@ -82,7 +101,6 @@ export function Topbar() {
         </div>
 
         <div className="hidden items-center gap-3 sm:flex">
-          <DataSourceBadge kind={dataMode === 'sample' ? 'sample' : 'computed'} label={dataMode === 'sample' ? 'Sample data' : 'Live data'} />
           <StatusIndicator state={backend.state} label={`API ${backend.label.toLowerCase()}`} />
         </div>
         <span className="sm:hidden">

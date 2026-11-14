@@ -28,16 +28,14 @@ function renderDashboard() {
 }
 
 describe('Mission Control dashboard', () => {
-  it('shows the four required metric cards, all unavailable (no fabricated values)', async () => {
+  it('shows the four required metric cards with computed values', async () => {
     renderDashboard();
     const cards = await screen.findAllByTestId('metric-card');
     expect(cards.map((c) => c.getAttribute('aria-label'))).toEqual([
       'Solar elevation', 'Earth elevation', 'Sunlight duration', 'Earth visibility',
     ]);
     for (const card of cards) {
-      expect(within(card).getByTestId('metric-value')).toHaveTextContent('—');
-      expect(within(card).getByText('Unavailable')).toBeInTheDocument();
-      expect(card.querySelector('[data-quality="unavailable"]')).not.toBeNull();
+      expect(within(card).getByTestId('metric-value')).not.toHaveTextContent('—');
     }
   });
 

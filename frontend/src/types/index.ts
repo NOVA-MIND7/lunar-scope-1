@@ -8,7 +8,7 @@
 /** ISO-8601 UTC timestamp, e.g. "2027-03-14T06:30:00.000Z". */
 export type UTCString = string;
 
-export type DataMode = 'sample' | 'live';
+export type UIMode = 'basic' | 'scientific';
 
 export type VisualizationId =
   | 'globe'
@@ -140,7 +140,7 @@ export interface MissionSelectionState {
 export interface AppState extends MissionSelectionState, SimulationState {
   comparisonScenarios: ComparisonScenario[];
   activeVisualization: VisualizationId;
-  dataMode: DataMode;
+  uiMode: UIMode;
 }
 
 export interface AppActions {
@@ -158,7 +158,7 @@ export interface AppActions {
   removeComparisonScenario: (id: string) => void;
   clearComparisonScenarios: () => void;
   setActiveVisualization: (id: VisualizationId) => void;
-  setDataMode: (mode: DataMode) => void;
+  setUIMode: (mode: UIMode) => void;
 }
 
 export type AppStore = AppState & AppActions;
