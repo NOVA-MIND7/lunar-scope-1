@@ -36,7 +36,11 @@ export interface MissionSummary {
   minTempC: number;
   maxTempC: number;
   highDustHours: number;
-  verdict: 'GO - OPTIMAL' | 'GO WITH ORBITAL RELAY' | 'NO-GO (POWER/THERMAL RISK)';
+  verdict:
+    | 'GO - OPTIMAL'
+    | 'GO WITH ORBITAL RELAY'
+    | 'GO (DUST / RELAY MITIGATION)'
+    | 'NO-GO (POWER/THERMAL RISK)';
 }
 
 // Interpolate the 36-point LOLA terrain horizon mask for any compass azimuth (0-360°)
@@ -128,11 +132,13 @@ export function computeSkyPositions(
     }
   }
 
-  // 6. Electrostatic Dust Lofting Model (Terminator UV Charging + Solar/Comms Impact)
+  // 6. Electrostatic Dust Lofting Model (True Sunrise/Sunset Terminator Crossing ±0.65° of ridge)
   const sunAngleFromRidge = sunEl - sunTerrainEl;
-  const isTerminatorCrossing = Math.abs(sunAngleFromRidge) <= 2.2;
+  const isTerminatorCrossing = Math.abs(sunAngleFromRidge) <= 0.65;
   const dustIndex = isTerminatorCrossing
-    ? Math.round(72 + (2.2 - Math.abs(sunAngleFromRidge)) * 12)
+    ? Math.round(75 + (0.65 - Math.abs(sunAngleFromRidge)) * 38)
+    : Math.abs(sunAngleFromRidge) <= 1.3
+    ? 48
     : isSunlit
     ? 18
     : 12;
@@ -241,8 +247,10 @@ export function simulateMissionWindow(
   }
 
   let verdict: MissionSummary['verdict'] = 'GO - OPTIMAL';
-  if (sunlightPercent < 65 || maxDarkHours > 50) {
+  if (sunlightPercent < 65 || maxDarkHours > 50 || minTempC < -215) {
     verdict = 'NO-GO (POWER/THERMAL RISK)';
+  } else if (highDustHours >= 12) {
+    verdict = 'GO (DUST / RELAY MITIGATION)';
   } else if (dtePercent < 60) {
     verdict = 'GO WITH ORBITAL RELAY';
   }
