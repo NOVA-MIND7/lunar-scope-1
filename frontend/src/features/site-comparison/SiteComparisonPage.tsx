@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   Calendar,
+  CheckCircle2,
   Clock,
   Compass,
+  Info,
   Layers,
   MapPin,
   Plus,
@@ -409,6 +412,71 @@ function verdictBadgeClass(verdict: MissionVerdict): string {
   if (verdict === 'GO - OPTIMAL') return 'border-success/50 bg-success/15 text-success';
   if (verdict.startsWith('GO')) return 'border-cyan/50 bg-cyan/15 text-cyan';
   return 'border-danger/50 bg-danger/15 text-danger';
+}
+
+interface VerdictExplanation {
+  reasons: string[];
+  suggestion: string;
+}
+
+function buildVerdictExplanation(ev: ScenarioEvaluation): VerdictExplanation {
+  const { sunlightPercent, maxDarkHours, minTempC, effectiveCommsPercent, dtePercent, highDustHours, verdict } = ev;
+
+  if (verdict === 'NO-GO (POWER/THERMAL RISK)') {
+    const reasons: string[] = [];
+    if (sunlightPercent < 65) {
+      reasons.push(`Solar illumination is ${sunlightPercent}% (below 65% minimum power threshold).`);
+    }
+    if (maxDarkHours > 50) {
+      reasons.push(`Max continuous darkness reaches ${maxDarkHours}h (exceeds 50h battery survival limit).`);
+    }
+    if (minTempC < -215) {
+      reasons.push(`Surface cools to ${minTempC}°C (below -215°C cryogenic survival limit).`);
+    }
+    return {
+      reasons,
+      suggestion:
+        'Try adding a launch Delay (+d) toward lunar summer sunlight or shortening the mission duration (e.g. 7d) to avoid extended shadow.',
+    };
+  }
+
+  if (verdict === 'NO-GO (COMMS BLACKOUT)') {
+    return {
+      reasons: [`Effective comms uptime is ${effectiveCommsPercent}% (below 35% minimum command & telemetry link gate).`],
+      suggestion: 'Switch comms topology to LLO 100km Relay or NRHO Halo, or pick a Near-Side / higher-ridge site.',
+    };
+  }
+
+  if (verdict === 'GO (DUST / RELAY MITIGATION)') {
+    const reasons = [
+      `Power & thermal gates pass (${sunlightPercent}% sun, ${maxDarkHours}h max dark, ${minTempC}°C min temp).`,
+      `Terminator dust lofting exposure is elevated (${highDustHours}h >= 12h), requiring optical/seal dust protection.`,
+    ];
+    if (dtePercent < 60) {
+      reasons.push(`Direct-to-Earth alone is ${dtePercent}%, boosted to ${effectiveCommsPercent}% via orbital relay.`);
+    }
+    return {
+      reasons,
+      suggestion: 'Cleared for mission with dust mitigation procedures enabled.',
+    };
+  }
+
+  if (verdict === 'GO WITH ORBITAL RELAY') {
+    return {
+      reasons: [
+        `Power & thermal gates pass (${sunlightPercent}% sun, ${maxDarkHours}h max dark, ${minTempC}°C min temp).`,
+        `Direct-to-Earth visibility is ${dtePercent}% (< 60%), so orbital relay maintains ${effectiveCommsPercent}% comms uptime.`,
+      ],
+      suggestion: 'Cleared for mission provided orbital relay support remains active.',
+    };
+  }
+
+  return {
+    reasons: [
+      `All mission gates pass cleanly: ${sunlightPercent}% sunlight (>= 65%), ${maxDarkHours}h max dark (<= 50h), ${minTempC}°C min temp (>= -215°C), and ${effectiveCommsPercent}% comms uptime.`,
+    ],
+    suggestion: 'No power, thermal, or communications blockers detected for this window.',
+  };
 }
 
 function ScenarioEditorCard({
@@ -1181,6 +1249,60 @@ export default function SiteComparisonPage() {
               </tr>
             </tbody>
           </table>
+        </div>
+
+        {/* Verdict Reasoning & Go/No-Go Threshold Explanation */}
+        <div className="space-y-3 border-t border-line pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-fg-muted">
+              <Info className="size-3.5 text-cyan" /> Why These Verdicts Were Assigned
+            </h3>
+            <span className="font-mono text-[10px] text-fg-dim">
+              NO-GO Gates: Sun &lt; 65% • Max Dark &gt; 50h • Min Temp &lt; -215°C • Comms &lt; 35%
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {(
+              [
+                { plan: 'Plan A', siteName: siteA.name, ev: evalA, borderCls: 'border-cyan/30' },
+                { plan: 'Plan B', siteName: siteB.name, ev: evalB, borderCls: 'border-warning/30' },
+              ] as const
+            ).map(({ plan, siteName, ev, borderCls }) => {
+              const info = buildVerdictExplanation(ev);
+              const isNoGo = ev.verdict.startsWith('NO-GO');
+              return (
+                <div
+                  key={plan}
+                  className={`rounded-card border p-3 ${
+                    isNoGo ? 'border-danger/45 bg-danger/5' : `${borderCls} bg-bg/50`
+                  }`}
+                >
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-fg">
+                      {plan}: {siteName} ({ev.durationDays}d)
+                    </span>
+                    <span className={`badge ${verdictBadgeClass(ev.verdict)}`}>{ev.verdict}</span>
+                  </div>
+                  <ul className="space-y-1 text-xs text-fg-muted">
+                    {info.reasons.map((r, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        {isNoGo ? (
+                          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-danger" />
+                        ) : (
+                          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success" />
+                        )}
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 border-t border-line/70 pt-1.5 font-mono text-[11px] text-cyan">
+                    {info.suggestion}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
