@@ -1,0 +1,19 @@
+# Dependencies / builds
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.tsbuildinfo
+
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+
+# Tooling output
+playwright-report/
+test-results/
+coverage/
+.DS_Store
