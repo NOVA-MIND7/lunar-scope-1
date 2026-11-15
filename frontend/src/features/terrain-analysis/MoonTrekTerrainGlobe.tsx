@@ -23,8 +23,6 @@ interface MoonTrekTerrainGlobeProps {
   cameraPreset: { id: number; target: TerrainCameraTarget; zoomDelta?: number };
   selectedLat: number;
   selectedLon: number;
-  demSamples: SouthPoleDemPoint[];
-  showDemOverlay: boolean;
   onHoverCoords: (coords: { lat: number; lon: number } | null) => void;
   onSelectCoords: (coords: { lat: number; lon: number }) => void;
 }
@@ -101,57 +99,6 @@ function TerrainCameraRig({
   );
 }
 
-/** Scatter point cloud rendered from bundled South Pole LOLA DEM CSV (`raw data/south_pole_terrain.txt`). */
-function SouthPoleDemPointCloud({ samples }: { samples: SouthPoleDemPoint[] }) {
-  const { geometry } = useMemo(() => {
-    const geo = new THREE.BufferGeometry();
-    if (samples.length === 0) return { geometry: geo };
-    const positions = new Float32Array(samples.length * 3);
-    const colors = new Float32Array(samples.length * 3);
-
-    samples.forEach((s, i) => {
-      const elevOffset = Math.max(-0.025, Math.min(0.025, (s.elevation_m / 8000) * 0.02));
-      const v = latLonToVector3(s.latitude_deg, s.longitude_deg, MOON_RADIUS + 0.015 + elevOffset);
-      positions[i * 3] = v.x;
-      positions[i * 3 + 1] = v.y;
-      positions[i * 3 + 2] = v.z;
-
-      // Color by slope severity: cyan-green (<8°), amber (8-18°), red (>18°)
-      if (s.slope_deg <= 8) {
-        colors[i * 3] = 0.13;
-        colors[i * 3 + 1] = 0.82;
-        colors[i * 3 + 2] = 0.65;
-      } else if (s.slope_deg <= 18) {
-        colors[i * 3] = 0.96;
-        colors[i * 3 + 1] = 0.68;
-        colors[i * 3 + 2] = 0.12;
-      } else {
-        colors[i * 3] = 0.94;
-        colors[i * 3 + 1] = 0.27;
-        colors[i * 3 + 2] = 0.27;
-      }
-    });
-
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    return { geometry: geo };
-  }, [samples]);
-
-  useEffect(() => {
-    return () => {
-      geometry.dispose();
-    };
-  }, [geometry]);
-
-  if (samples.length === 0) return null;
-
-  return (
-    <points geometry={geometry}>
-      <pointsMaterial size={0.024} vertexColors transparent opacity={0.82} sizeAttenuation />
-    </points>
-  );
-}
-
 function MoonTrekStage({
   layerMode,
   exaggeration,
@@ -159,8 +106,6 @@ function MoonTrekStage({
   cameraPreset,
   selectedLat,
   selectedLon,
-  demSamples,
-  showDemOverlay,
   onHoverCoords,
   onSelectCoords,
 }: MoonTrekTerrainGlobeProps) {
@@ -268,9 +213,6 @@ function MoonTrekStage({
           <meshStandardMaterial key="moon-loading" color="#475569" roughness={0.9} />
         )}
       </mesh>
-
-      {/* Bundled South Pole LOLA DEM Scatter Overlay */}
-      {showDemOverlay && <SouthPoleDemPointCloud samples={demSamples} />}
 
       {/* Active Selected Target Pin */}
       <group position={selectedPos} quaternion={selectedQuat}>
