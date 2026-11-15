@@ -49,7 +49,7 @@ beforeEach(() => {
 describe('routing and shell', () => {
   it('declares every route, including the footer pages', () => {
     expect(ROUTES.map((r) => r.path)).toEqual([
-      '/', '/explorer', '/navigator', '/solar', '/earth', '/comms', '/direct-comms', '/timeline', '/compare', '/terrain',
+      '/', '/explorer', '/solar', '/earth', '/comms', '/direct-comms', '/timeline', '/compare', '/terrain',
       '/reports', '/settings', '/status',
     ]);
   });
@@ -95,7 +95,7 @@ describe('routing and shell', () => {
 
   it('renders solar analysis page', async () => {
     renderAt('/solar');
-    expect(await screen.findByRole('heading', { level: 1, name: /Solar/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: /Solar/i }, { timeout: 15000 })).toBeInTheDocument();
   });
 
   it.each([

@@ -2,7 +2,6 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Radar,
   Globe2,
-  Crosshair,
   Sun,
   Satellite,
   Radio,
@@ -30,7 +29,6 @@ export interface RouteDef {
 export const ROUTES: readonly RouteDef[] = [
   { path: '/', label: 'Mission Control', description: 'Mission overview and live conditions', icon: Radar, group: 'main', minMode: 'basic' },
   { path: '/explorer', label: 'Lunar Explorer', description: 'Interactive 3D model of the Moon', icon: Globe2, group: 'main', minMode: 'basic' },
-  { path: '/navigator', label: 'Landing Navigator', description: 'Browse and select candidate landing sites', icon: Crosshair, group: 'main', minMode: 'basic' },
   { path: '/solar', label: 'Solar Analysis', description: 'Sun position and illumination at a site', icon: Sun, group: 'main', minMode: 'scientific' },
   { path: '/earth', label: 'Earth Visibility', description: 'Earth visibility for communications', icon: Satellite, group: 'main', minMode: 'scientific' },
   { path: '/comms', label: 'Comms Network', description: '3D Moon-to-Earth relay and DSN link simulation', icon: Radio, group: 'main', minMode: 'scientific' },

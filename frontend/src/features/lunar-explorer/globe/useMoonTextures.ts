@@ -11,16 +11,6 @@ export interface MoonTextureSet {
   note?: string;
 }
 
-/** True if the URL serves an image. A dev server's HTML fallback for a missing file does not count. */
-async function imageExists(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, { method: 'HEAD' });
-    return res.ok && (res.headers.get('content-type') ?? '').startsWith('image/');
-  } catch {
-    return false;
-  }
-}
-
 function canvasTexture(data: Uint8ClampedArray, width: number, height: number, srgb: boolean): CanvasTexture {
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -50,18 +40,24 @@ async function buildProcedural(note?: string): Promise<MoonTextureSet> {
 
 async function loadReal(): Promise<MoonTextureSet | null> {
   const { colorUrl, elevationUrl, credit } = MOON_TEXTURE_CONFIG;
-  if (!(await imageExists(colorUrl))) return null;
   const loader = new TextureLoader();
-  const map = await loader.loadAsync(colorUrl);
-  map.colorSpace = SRGBColorSpace;
-  map.anisotropy = 8;
-  let bump: Texture | null = null;
-  if (await imageExists(elevationUrl)) {
-    bump = await loader.loadAsync(elevationUrl);
-    bump.colorSpace = NoColorSpace;
-    bump.anisotropy = 8;
+  try {
+    const [map, bump] = await Promise.all([
+      loader.loadAsync(colorUrl).then((t) => {
+        t.colorSpace = SRGBColorSpace;
+        t.anisotropy = 8;
+        return t;
+      }),
+      loader.loadAsync(elevationUrl).then((t) => {
+        t.colorSpace = NoColorSpace;
+        t.anisotropy = 8;
+        return t;
+      }).catch(() => null),
+    ]);
+    return { map, bump, source: { kind: 'custom', label: 'NASA Moon Trek 3D Surface (LRO WAC + LOLA)', credit, isRealImagery: true } };
+  } catch {
+    return null;
   }
-  return { map, bump, source: { kind: 'custom', label: 'Installed lunar imagery', credit, isRealImagery: true } };
 }
 
 let cache: Promise<MoonTextureSet> | null = null;

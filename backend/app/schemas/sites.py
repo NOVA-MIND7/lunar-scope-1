@@ -23,6 +23,7 @@ class LandingSite(ApiModel):
     category: SiteCategory
     precision: LocationPrecision
     coordinates: LunarCoordinates
+    year: int | None = None
     provenance: Literal["sample", "published", "computed", "user"]
     description: str
     notes: str | None = None

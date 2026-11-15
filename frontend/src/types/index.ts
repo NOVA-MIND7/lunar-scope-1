@@ -40,6 +40,7 @@ export interface LandingSite {
   category: SiteCategory;
   precision: LocationPrecision;
   coordinates: LunarCoordinates;
+  year?: number;
   /** Where the record comes from; sample data must be labelled as such. */
   provenance: 'sample' | 'published' | 'computed' | 'user';
   description: string;

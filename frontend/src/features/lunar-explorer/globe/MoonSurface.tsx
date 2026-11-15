@@ -12,6 +12,7 @@ const CLICK_DRAG_TOLERANCE_PX = 4;
 const CURSOR_THROTTLE_MS = 50;
 
 interface SurfaceInteractionProps {
+  textures?: MoonTextureSet;
   onSurfaceClick: (e: ThreeEvent<MouseEvent>) => void;
   onSurfaceDoubleClick: (e: ThreeEvent<MouseEvent>) => void;
   onSurfacePointerMove: (e: ThreeEvent<PointerEvent>) => void;
@@ -21,6 +22,7 @@ interface SurfaceInteractionProps {
 
 /** Terrain Analysis moon: NASA Moon Trek LRO WAC + LOLA displaced surface (same as Terrain Analysis tab). */
 function TerrainMoonModel({
+  textures,
   onSurfaceClick,
   onSurfaceDoubleClick,
   onSurfacePointerMove,
@@ -29,26 +31,34 @@ function TerrainMoonModel({
 }: SurfaceInteractionProps) {
   const maxAnisotropy = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
   const geometry = useMemo(() => new SphereGeometry(1, 160, 120), []);
-  const [wacTex, setWacTex] = useState<Texture | null>(null);
-  const [shadeTex, setShadeTex] = useState<Texture | null>(null);
+  const [localWacTex, setLocalWacTex] = useState<Texture | null>(null);
+  const [localShadeTex, setLocalShadeTex] = useState<Texture | null>(null);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   useEffect(() => {
+    if (textures?.map && textures?.bump) return;
     const loader = new TextureLoader();
     const base = import.meta.env.BASE_URL || '/';
     const mkUrl = (name: string) => `${base}textures/${name}`.replace(/\/+/g, '/');
-    loader.load(mkUrl('moon_trek_wac.jpg'), (t) => {
-      t.colorSpace = SRGBColorSpace;
-      t.anisotropy = maxAnisotropy;
-      setWacTex(t);
-    });
-    loader.load(mkUrl('moon_trek_lola_shade.jpg'), (t) => {
-      t.colorSpace = NoColorSpace;
-      t.anisotropy = maxAnisotropy;
-      setShadeTex(t);
-    });
-  }, [maxAnisotropy]);
+    if (!textures?.map) {
+      loader.load(mkUrl('moon_trek_wac.jpg'), (t) => {
+        t.colorSpace = SRGBColorSpace;
+        t.anisotropy = maxAnisotropy;
+        setLocalWacTex(t);
+      });
+    }
+    if (!textures?.bump) {
+      loader.load(mkUrl('moon_trek_lola_shade.jpg'), (t) => {
+        t.colorSpace = NoColorSpace;
+        t.anisotropy = maxAnisotropy;
+        setLocalShadeTex(t);
+      });
+    }
+  }, [textures, maxAnisotropy]);
+
+  const wacTex = textures?.map ?? localWacTex;
+  const shadeTex = textures?.bump ?? localShadeTex;
 
   const eclipseFactor = useGlobeStore((s) => s.eclipseFactor);
   const eclipseColor = useMemo(() => {
@@ -79,6 +89,7 @@ function TerrainMoonModel({
     >
       {wacTex ? (
         <meshStandardMaterial
+          key="moon-textured"
           map={wacTex}
           bumpMap={shadeTex ?? undefined}
           bumpScale={0.038 * 1.5}
@@ -90,14 +101,14 @@ function TerrainMoonModel({
           color={eclipseColor}
         />
       ) : (
-        <meshStandardMaterial color="#475569" roughness={0.9} />
+        <meshStandardMaterial key="moon-loading" color="#475569" roughness={0.9} />
       )}
     </mesh>
   );
 }
 
 /** The 3D lunar sphere. Handles surface picking (click, double-click, hover coordinates). */
-export const MoonSurface = memo(function MoonSurface(_props: { textures: MoonTextureSet }) {
+export const MoonSurface = memo(function MoonSurface(props: { textures: MoonTextureSet }) {
   const lastMove = useRef(0);
   const [hovered, setHovered] = useState(false);
   useCursor(hovered, 'crosshair');
@@ -142,6 +153,7 @@ export const MoonSurface = memo(function MoonSurface(_props: { textures: MoonTex
 
   return (
     <TerrainMoonModel
+      textures={props.textures}
       onSurfaceClick={handleSurfaceClick}
       onSurfaceDoubleClick={handleSurfaceDoubleClick}
       onSurfacePointerMove={handleSurfacePointerMove}

@@ -155,7 +155,9 @@ export const CelestialEarth = memo(function CelestialEarth({
           </Suspense>
 
           {/* 70 Meter DSN Ground Station Dish in California, USA */}
-          <DSNDish />
+          <Suspense fallback={null}>
+            <DSNDish />
+          </Suspense>
 
           {/* Atmospheric Cloud Shell */}
           <mesh ref={cloudsRef} raycast={() => null}>

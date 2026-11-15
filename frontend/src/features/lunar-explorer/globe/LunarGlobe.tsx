@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
-import { Globe2, Clock, Layers, Compass, Tag } from 'lucide-react';
+import { Globe2, Clock, Layers, Compass, Tag, Crosshair } from 'lucide-react';
 import type { LandingSite } from '@/types';
 import { useSites } from '@/hooks/useApi';
 import { useFullscreen } from '@/hooks/useFullscreen';
@@ -21,6 +21,7 @@ import { CassiniSouthPolePanel } from './panels/CassiniSouthPolePanel';
 import { CoordinateEntryPanel } from './panels/CoordinateEntryPanel';
 import { CoordinateReadout } from './panels/CoordinateReadout';
 import { DraggablePanel } from './panels/DraggablePanel';
+import { LandingNavigatorPanel } from './panels/LandingNavigatorPanel';
 import { LayersPanel } from './panels/LayersPanel';
 import { PendingLocationBar } from './panels/PendingLocationBar';
 import { SiteInfoPanel } from './panels/SiteInfoPanel';
@@ -37,7 +38,7 @@ export interface LunarGlobeProps {
 
 const NO_SITES: LandingSite[] = [];
 
-function QuickNavHelper() {
+function QuickNavHelper({ onToggleNavigator }: { onToggleNavigator?: () => void }) {
   const issue = useGlobeStore((s) => s.issueCommand);
   const setFocusTarget = useGlobeStore((s) => s.setFocusTarget);
   const enterSouthPole = useGlobeStore((s) => s.enterSouthPole);
@@ -51,6 +52,20 @@ function QuickNavHelper() {
         🖱️ Rotate: Drag &nbsp;|&nbsp; 🔄 Zoom: Scroll &nbsp;|&nbsp; 📍 Click: Pick
       </span>
       <div className="hidden 2xl:inline h-3 w-px bg-line" />
+      {onToggleNavigator ? (
+        <>
+          <button
+            type="button"
+            className="flex items-center gap-1 rounded-full border border-cyan/40 bg-cyan/15 px-2.5 py-0.5 font-mono text-xs font-semibold text-cyan hover:bg-cyan/30 transition cursor-pointer shadow-sm"
+            onClick={onToggleNavigator}
+            title="Open Landing Navigator sites list"
+          >
+            <Crosshair className="size-3 text-cyan" />
+            <span>Sites List</span>
+          </button>
+          <div className="h-3 w-px bg-line" />
+        </>
+      ) : null}
       <span className="text-fg-muted font-medium text-xs">Quick Jump:</span>
       <button
         type="button"
@@ -170,6 +185,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
   // Flyout drawer states (collapsed by default so simulation card fills the view cleanly)
   const [showTimeFlyout, setShowTimeFlyout] = useState(false);
   const [showNavLayers, setShowNavLayers] = useState(false);
+  const [showLandingNavigator, setShowLandingNavigator] = useState(false);
   const [showMissionFlyout, setShowMissionFlyout] = useState(false);
 
   const showTelemetryLabels = useGlobeStore((s) => s.showTelemetryLabels);
@@ -308,6 +324,24 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
           <Layers className="size-4" />
         </button>
 
+        {/* Landing Navigator Icon Button */}
+        <button
+          type="button"
+          className={`btn-icon size-8 rounded-lg border backdrop-blur transition cursor-pointer shadow-lg ${
+            showLandingNavigator
+              ? 'border-cyan bg-cyan/25 text-cyan font-bold shadow-cyan/20 ring-1 ring-cyan/50'
+              : 'border-line/80 bg-bg/90 text-fg-muted hover:text-cyan hover:border-cyan/50'
+          }`}
+          onClick={() => {
+            setShowLandingNavigator((v) => !v);
+            if (showTimeFlyout) setShowTimeFlyout(false);
+          }}
+          title="Landing Navigator & Candidate Sites (10-Year Clusters)"
+          aria-label="Landing Navigator & Candidate Sites"
+        >
+          <Crosshair className="size-4" />
+        </button>
+
         {/* Mission Controls & Sites Icon Button */}
         <button
           type="button"
@@ -371,6 +405,19 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
             </DraggablePanel>
           )}
 
+          {showLandingNavigator && (
+            <DraggablePanel
+              id="landing-navigator"
+              title="Landing Navigator"
+              dock="left"
+              widthClassName="w-88"
+              maxHeightClassName="max-h-[calc(100vh-10rem)]"
+              onClose={() => setShowLandingNavigator(false)}
+            >
+              <LandingNavigatorPanel />
+            </DraggablePanel>
+          )}
+
           {showMissionFlyout && (
             <DraggablePanel
               id="mission-controls"
@@ -395,7 +442,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
             <PendingLocationBar />
           </div>
           <div className="pointer-events-none absolute bottom-3 right-3 z-10 hidden sm:block">
-            <QuickNavHelper />
+            <QuickNavHelper onToggleNavigator={() => setShowLandingNavigator((v) => !v)} />
           </div>
         </>
       ) : null}
@@ -404,6 +451,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
         <div className="grid gap-3 p-3 md:grid-cols-2">
           <div className="space-y-3">
             {cameraPanel}
+            {showLandingNavigator ? <LandingNavigatorPanel /> : null}
             {showSatellitePanel ? <CassiniSouthPolePanel /> : null}
             <PendingLocationBar />
             <CoordinateEntryPanel />

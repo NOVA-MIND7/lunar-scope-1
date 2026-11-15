@@ -21,8 +21,8 @@ const fragmentShader = /* glsl */ `
   varying vec3 vPosW;
   void main() {
     vec3 viewDir = normalize(cameraPosition - vPosW);
-    float facing = clamp(abs(dot(normalize(vNormalW), viewDir)) / 0.24, 0.0, 1.0);
-    float rim = pow(facing, 1.6);
+    float limb = 1.0 - clamp(abs(dot(normalize(vNormalW), viewDir)), 0.0, 1.0);
+    float rim = pow(limb, 2.5);
     float sunSide = smoothstep(-0.35, 0.6, dot(normalize(vPosW), uSun));
     gl_FragColor = vec4(uColor, rim * sunSide * uIntensity);
   }

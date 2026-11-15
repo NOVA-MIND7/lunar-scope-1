@@ -21,10 +21,10 @@ export interface MoonTextureSource {
 const env = import.meta.env as Record<string, string | undefined>;
 
 export const MOON_TEXTURE_CONFIG = {
-  colorUrl: env.VITE_MOON_COLOR_TEXTURE ?? '/textures/moon_color.jpg',
-  elevationUrl: env.VITE_MOON_ELEVATION_TEXTURE ?? '/textures/moon_elevation.jpg',
-  credit: env.VITE_MOON_TEXTURE_CREDIT ?? 'Credit not configured (set VITE_MOON_TEXTURE_CREDIT)',
-  proceduralWidth: Math.min(4096, Math.max(512, Number(env.VITE_MOON_PROCEDURAL_WIDTH) || 2048)),
+  colorUrl: env.VITE_MOON_COLOR_TEXTURE ?? '/textures/moon_trek_wac.jpg',
+  elevationUrl: env.VITE_MOON_ELEVATION_TEXTURE ?? '/textures/moon_trek_lola_shade.jpg',
+  credit: env.VITE_MOON_TEXTURE_CREDIT ?? 'NASA Moon Trek LRO WAC mosaic with LOLA shaded-relief elevation',
+  proceduralWidth: Math.min(4096, Math.max(512, Number(env.VITE_MOON_PROCEDURAL_WIDTH) || 1024)),
 } as const;
 
 export const PROCEDURAL_SOURCE: MoonTextureSource = {

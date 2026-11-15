@@ -9,7 +9,6 @@ import SystemStatusPage from './SystemStatusPage';
 
 // The 3D explorer pulls in Three.js, so it is code-split.
 const LunarExplorerPage = lazy(() => import('@/features/lunar-explorer/LunarExplorerPage'));
-const SiteNavigatorPage = lazy(() => import('@/features/site-navigator/SiteNavigatorPage'));
 const SolarAnalysisPage = lazy(() => import('@/features/solar-analysis/SolarAnalysisPage'));
 const EarthVisibilityPage = lazy(() => import('@/features/earth-visibility/EarthVisibilityPage'));
 const CommsNetworkPage = lazy(() => import('@/features/comms-network/CommsNetworkPage'));
@@ -30,7 +29,6 @@ export const routeObjects: RouteObject[] = [
     children: [
       { path: '/', element: <DashboardPage /> },
       { path: '/explorer', element: <LunarExplorerPage /> },
-      { path: '/navigator', element: <SiteNavigatorPage /> },
       { path: '/solar', element: <SolarAnalysisPage /> },
       { path: '/earth', element: <EarthVisibilityPage /> },
       { path: '/comms', element: <CommsNetworkPage /> },

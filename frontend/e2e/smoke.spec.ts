@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const ROUTES = [
-  ['/', 'Mission Control'], ['/explorer', 'Lunar Explorer'], ['/navigator', 'Landing Navigator'],
+  ['/', 'Mission Control'], ['/explorer', 'Lunar Explorer'],
   ['/solar', 'Solar Analysis'], ['/earth', 'Earth Visibility'], ['/timeline', 'Mission Timeline'],
   ['/compare', 'Site Comparison'], ['/terrain', 'Terrain Analysis'], ['/recommendations', 'Recommendations'],
   ['/reports', 'Mission Reports'], ['/data-sources', 'Data Sources'], ['/settings', 'Settings'], ['/status', 'System Status'],
