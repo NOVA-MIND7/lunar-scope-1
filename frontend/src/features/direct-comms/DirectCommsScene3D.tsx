@@ -771,10 +771,36 @@ function SurfaceTerrainStage({
         <meshStandardMaterial color="#64748b" roughness={0.94} metalness={0.05} />
       </mesh>
 
-      {/* Lander Mast + Direct-to-Earth High-Gain Antenna Dish */}
+      {/* Rover Chassis, Dual Tracking Solar Wings, & DTE Antenna Mast */}
       <group position={[0, 0, 0]}>
-        <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.35, 0.58, 3.0, 14]} />
+        <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.9, 0.75, 1.5]} />
+          <meshStandardMaterial color="#cbd5e1" roughness={0.45} metalness={0.55} />
+        </mesh>
+        {/* Left & Right Photovoltaic Solar Wings (glow blue/cyan when generating power) */}
+        <mesh position={[-2.1, 0.95, 0]} rotation={[0.35, 0, 0]} castShadow receiveShadow>
+          <boxGeometry args={[2.1, 0.08, 1.1]} />
+          <meshStandardMaterial
+            color={frame.solarGeneratedW > 0 ? '#0284c7' : '#1e293b'}
+            emissive={frame.solarGeneratedW > 0 ? '#0369a1' : '#000000'}
+            emissiveIntensity={frame.solarGeneratedW > 0 ? 0.55 : 0}
+            roughness={0.28}
+            metalness={0.65}
+          />
+        </mesh>
+        <mesh position={[2.1, 0.95, 0]} rotation={[0.35, 0, 0]} castShadow receiveShadow>
+          <boxGeometry args={[2.1, 0.08, 1.1]} />
+          <meshStandardMaterial
+            color={frame.solarGeneratedW > 0 ? '#0284c7' : '#1e293b'}
+            emissive={frame.solarGeneratedW > 0 ? '#0369a1' : '#000000'}
+            emissiveIntensity={frame.solarGeneratedW > 0 ? 0.55 : 0}
+            roughness={0.28}
+            metalness={0.65}
+          />
+        </mesh>
+        {/* Antenna Mast & DTE Feed */}
+        <mesh position={[0, 1.85, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.22, 0.36, 2.2, 14]} />
           <meshStandardMaterial color="#00d9ff" roughness={0.45} metalness={0.45} />
         </mesh>
         <mesh position={[0, 3.2, 0]} castShadow>
@@ -782,6 +808,20 @@ function SurfaceTerrainStage({
           <meshBasicMaterial color={frame.linkUp ? '#22c55e' : '#ef4444'} />
         </mesh>
       </group>
+
+      {/* Sunlight ray to rover solar array when directly illuminated */}
+      {isSunVisible && (
+        <Line
+          points={[sunSkyVec.clone().normalize().multiplyScalar(105).toArray(), [0, 1.0, 0]]}
+          color="#fde047"
+          lineWidth={1.1}
+          dashed
+          dashSize={2.2}
+          gapSize={1.8}
+          transparent
+          opacity={0.42}
+        />
+      )}
 
       {/* Moving Sun Orb in Sky */}
       <mesh position={sunSkyVec.clone().normalize().multiplyScalar(105)}>
@@ -961,6 +1001,18 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
             <Sun className="mr-1 size-3" />
             {hudFrame.illumination.replace(/_/g, ' ')}
             {hudFrame.earthUmbraShadowActive ? ' • Earth Shadow' : ''}
+          </span>
+          <span
+            className={`badge backdrop-blur ${
+              hudFrame.netPowerW >= 0
+                ? 'border-success/50 bg-bg/90 text-success'
+                : 'border-warning/60 bg-bg/90 text-warning'
+            }`}
+          >
+            {hudFrame.solarGeneratedW}W Solar •{' '}
+            {hudFrame.netPowerW >= 0
+              ? `+${hudFrame.netPowerW}W Sustained`
+              : `${hudFrame.netPowerW}W (${hudFrame.powerLastsHours}h left)`}
           </span>
         </div>
 
