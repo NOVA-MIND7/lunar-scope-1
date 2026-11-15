@@ -42,7 +42,7 @@ export function LunarMap2D() {
   if (sitesQuery.isPending) {
     return (
       <MissionPanel title="2D Lunar Map" icon={Globe}>
-        <div className="flex h-full items-center justify-center text-fg-muted">Loading surface data…</div>
+        <div className="flex h-full items-center justify-center text-fg-muted">Loading surface dataâ€¦</div>
       </MissionPanel>
     );
   }
@@ -50,10 +50,10 @@ export function LunarMap2D() {
   return (
     <MissionPanel title="2D Lunar Map" icon={Globe} className="h-full flex flex-col">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line bg-bg/50 text-xs text-fg-muted">
-        <span>Equirectangular projection · {sites.length} sites · illustrative terminator</span>
+        <span>Equirectangular projection Â· {sites.length} sites Â· illustrative terminator</span>
         <div className="flex gap-1">
           <button type="button" onClick={() => setVisualizationMode('globe')} className={`btn btn-sm ${visualizationMode === 'globe' ? 'btn-primary' : 'btn-outline'}`} title="3D Globe"><Globe className="size-3.5" /></button>
-          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className={`btn btn-sm ${visualizationMode === 'solarsystem' ? 'btn-primary' : 'btn-outline'}`} title="Sun–Earth–Moon system"><Sun className="size-3.5" /></button>
+          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className={`btn btn-sm ${visualizationMode === 'solarsystem' ? 'btn-primary' : 'btn-outline'}`} title="Sunâ€“Earthâ€“Moon system"><Sun className="size-3.5" /></button>
         </div>
       </div>
       <div className="flex-1 relative overflow-hidden bg-[#0b0f1a] border border-line rounded-lg">
@@ -107,7 +107,7 @@ export function LunarMap2D() {
             <Crosshair className="size-3.5" aria-hidden /> {pending ? 'Confirm site' : 'Pick site'}
           </button>
           <button type="button" onClick={() => setVisualizationMode('globe')} className="btn btn-sm btn-outline" title="Open 3D Globe"><Globe className="size-3.5" aria-hidden /> 3D Globe</button>
-          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className="btn btn-sm btn-outline" title="Sun–Earth–Moon spatial view"><Sun className="size-3.5" aria-hidden /> System view</button>
+          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className="btn btn-sm btn-outline" title="Sunâ€“Earthâ€“Moon spatial view"><Sun className="size-3.5" aria-hidden /> System view</button>
         </div>
         <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1 p-2 rounded-lg border border-line bg-bg/90 backdrop-blur text-xs text-fg-muted shadow-lg">
           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#22d3ee]" aria-hidden /><span>Landing site</span></div>

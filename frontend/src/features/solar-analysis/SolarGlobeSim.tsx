@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
+import { Html, Line, OrbitControls, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Compass, Eye, Globe2, Mountain, RotateCcw, Sun } from 'lucide-react';
@@ -30,6 +30,8 @@ type CameraFocusPreset = {
   position: [number, number, number];
 };
 
+const MOON_MODEL_SCALE = 1 / 1.2718640565872192;
+
 function MoonGlbModel({
   onPointerDown,
   onClick,
@@ -41,51 +43,35 @@ function MoonGlbModel({
   onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
   onPointerOut: () => void;
 }) {
-  const [wacTex, setWacTex] = useState<THREE.Texture | null>(null);
-  const [shadeTex, setShadeTex] = useState<THREE.Texture | null>(null);
-  const maxAnisotropy = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
-
-  useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    const base = import.meta.env.BASE_URL || '/';
-    const mkUrl = (name: string) => `${base}textures/${name}`.replace(/\/+/g, '/');
-    loader.load(mkUrl('moon_trek_wac.jpg'), (t) => {
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = maxAnisotropy;
-      setWacTex(t);
+  const modelUrl = `${import.meta.env.BASE_URL}models/moon.glb`.replace(/\/+/g, '/');
+  const gltf = useGLTF(modelUrl);
+  const sceneClone = useMemo(() => {
+    const clone = gltf.scene.clone(true);
+    clone.traverse((child) => {
+      const mesh = child as THREE.Mesh;
+      if (mesh.isMesh) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        const mat = mesh.material as THREE.MeshStandardMaterial | undefined;
+        if (mat) {
+          mat.roughness = 0.92;
+          mat.metalness = 0.04;
+          mat.needsUpdate = true;
+        }
+      }
     });
-    loader.load(mkUrl('moon_trek_lola_shade.jpg'), (t) => {
-      t.colorSpace = THREE.NoColorSpace;
-      t.anisotropy = maxAnisotropy;
-      setShadeTex(t);
-    });
-  }, [maxAnisotropy]);
-
-  const dispScale = shadeTex ? 0.032 * 1.5 : 0;
+    return clone;
+  }, [gltf.scene]);
 
   return (
-    <mesh
+    <primitive
+      object={sceneClone}
+      scale={MOON_MODEL_SCALE}
       onPointerDown={onPointerDown}
       onClick={onClick}
       onPointerMove={onPointerMove}
       onPointerOut={onPointerOut}
-    >
-      <sphereGeometry args={[1, 160, 120]} />
-      {wacTex ? (
-        <meshStandardMaterial
-          map={wacTex}
-          bumpMap={shadeTex ?? undefined}
-          bumpScale={0.038 * 1.5}
-          displacementMap={shadeTex ?? undefined}
-          displacementScale={dispScale}
-          displacementBias={-dispScale * 0.5}
-          roughness={0.9}
-          metalness={0.05}
-        />
-      ) : (
-        <meshStandardMaterial color="#475569" roughness={0.9} />
-      )}
-    </mesh>
+    />
   );
 }
 
@@ -256,7 +242,7 @@ function OrbitalMoonScene({
     <group visible={active}>
       {active && <color attach="background" args={['#050914']} />}
       {active && <Stars radius={45} depth={30} count={1400} factor={2.2} saturation={0} fade />}
-      {active && <ambientLight intensity={0.14} />}
+      {active && <ambientLight intensity={0.22} />}
       {active && <directionalLight position={sunVec.toArray()} intensity={2.6} color="#fff7ed" />}
 
       {/* 3D Real Moon Model from moon.glb with authentic lunar topography */}
