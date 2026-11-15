@@ -282,7 +282,7 @@ export function MoonEarthVisibilityAnalysis() {
   const earthPosition: [number, number, number] = useMemo(() => {
     const az = (direction.azimuth * Math.PI) / 180;
     const el = (direction.elevation * Math.PI) / 180;
-    const dist = 36;
+    const dist = 500;
     return [
       Math.sin(az) * Math.cos(el) * dist,
       Math.max(4, Math.sin(el) * 26 + 5),
