@@ -47,12 +47,7 @@ function LunarTerrain() {
     result.computeVertexNormals();
     return result;
   }, []);
-  return <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, -0.6]} receiveShadow><meshStandardMaterial color="#77736d" roughness={1} flatShading /></mesh>;
-}
-
-function Craters() {
-  const craters = [[-2.2, -1.5, 0.42], [1.6, -1.2, 0.3], [2.7, 0.35, 0.5], [-1.1, 1.2, 0.25], [0.4, -0.2, 0.18], [-3.1, 0.7, 0.28]] as const;
-  return <>{craters.map(([x, z, radius], index) => <mesh key={index} position={[x, 0.01, z - 0.6]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[radius * 0.62, radius, 32]} /><meshBasicMaterial color="#292827" transparent opacity={0.82} /></mesh>)}</>;
+  return <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, -0.6]} receiveShadow><meshStandardMaterial color="#363330" roughness={1} flatShading /></mesh>;
 }
 
 function Lander({ position }: { position: [number, number, number] }) {
@@ -69,7 +64,7 @@ function MoonPerspectiveScene({ earthPosition, elevation, azimuth, visible }: { 
   const lander: [number, number, number] = [0, 0.24, 0.15];
   return <>
     <ambientLight intensity={1.1} /><directionalLight position={[3, 5, 4]} intensity={4} color="#dbeafe" /><Stars radius={30} depth={18} count={800} factor={1.5} fade />
-    <LunarTerrain /><Craters /><Lander position={lander} /><EarthModel position={earthPosition} />
+    <LunarTerrain /><Lander position={lander} /><EarthModel position={earthPosition} />
     <Line points={[new Vector3(...lander), new Vector3(...earthPosition)]} color={visible ? '#22c55e' : '#ef4444'} lineWidth={2} dashed dashSize={0.08} gapSize={0.06} />
     <Html position={earthPosition} distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-[10px] text-cyan-200">Earth · Elev {elevation.toFixed(1)}° · Az {azimuth.toFixed(0)}°</span></Html>
     <OrbitControls enablePan={false} minDistance={4} maxDistance={14} target={[0, 0.7, -1.4]} />
