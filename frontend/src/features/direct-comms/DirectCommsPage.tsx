@@ -164,7 +164,7 @@ export default function DirectCommsPage() {
               {showLabels ? 'Hide Labels' : 'Show Labels'}
             </button>
 
-            <div className="flex items-center gap-1 rounded border border-line bg-bg/70 px-2 py-1 text-[11px]">
+            <div className="flex items-center gap-1 rounded border border-line bg-bg/70 px-2 py-1 text-sm">
               <span className="text-fg-dim mr-1">Speed:</span>
               {[4, 12, 36, 72].map((spd) => (
                 <button
@@ -183,7 +183,7 @@ export default function DirectCommsPage() {
 
           {/* Quick Scenario Jumps */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-fg-dim mr-1">
+            <span className="font-mono text-xs uppercase tracking-wider text-fg-dim mr-1">
               Jump To:
             </span>
             {SYNODIC_PRESETS.map((p) => (
@@ -192,7 +192,7 @@ export default function DirectCommsPage() {
                 type="button"
                 title={p.desc}
                 onClick={() => handleScrubHours(p.hours)}
-                className={`rounded border px-2.5 py-1 text-[11px] font-medium transition cursor-pointer ${
+                className={`rounded border px-2.5 py-1 text-sm font-medium transition cursor-pointer ${
                   Math.abs(frame.synodicHours - p.hours) < 8
                     ? 'border-cyan bg-cyan/15 text-cyan'
                     : 'border-line bg-bg/60 text-fg-muted hover:border-line-strong hover:text-fg'
@@ -268,27 +268,27 @@ export default function DirectCommsPage() {
 
             <div className="grid grid-cols-2 gap-2 font-mono text-xs">
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">SUN EL / AZ AT SITE</div>
+                <div className="text-xs text-fg-dim">SUN EL / AZ AT SITE</div>
                 <div className="mt-0.5 text-sm font-bold text-warning">
-                  {frame.sunElDeg.toFixed(1)}° <span className="text-[11px] font-normal text-fg-muted">/ {frame.sunAzDeg.toFixed(1)}°</span>
+                  {frame.sunElDeg.toFixed(1)}° <span className="text-sm font-normal text-fg-muted">/ {frame.sunAzDeg.toFixed(1)}°</span>
                 </div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   Ridge Mask: {frame.sunHorizonElDeg.toFixed(1)}°
                 </div>
               </div>
 
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">SUB-SOLAR POINT</div>
+                <div className="text-xs text-fg-dim">SUB-SOLAR POINT</div>
                 <div className="mt-0.5 text-sm font-bold text-fg">
                   {frame.subSolarLatDeg.toFixed(1)}°, {frame.subSolarLonDeg.toFixed(1)}°
                 </div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   Synodic Phase: {frame.synodicPhaseDeg.toFixed(0)}°
                 </div>
               </div>
 
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">SUN–EARTH ANGLE (SEP)</div>
+                <div className="text-xs text-fg-dim">SUN–EARTH ANGLE (SEP)</div>
                 <div
                   className={`mt-0.5 text-sm font-bold ${
                     frame.solarBlockingActive ? 'text-danger' : 'text-success'
@@ -296,13 +296,13 @@ export default function DirectCommsPage() {
                 >
                   {frame.sunEarthSepDeg.toFixed(1)}°
                 </div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   {frame.solarBlockingActive ? 'SOLAR BLOCKING (<7.5°)' : 'Clear RF Corridor'}
                 </div>
               </div>
 
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">ECLIPSE UMBRA</div>
+                <div className="text-xs text-fg-dim">ECLIPSE UMBRA</div>
                 <div
                   className={`mt-0.5 text-sm font-bold ${
                     frame.earthUmbraShadowActive ? 'text-danger' : 'text-cyan'
@@ -310,7 +310,7 @@ export default function DirectCommsPage() {
                 >
                   {Math.round(frame.eclipseFraction * 100)}%
                 </div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   {frame.earthUmbraShadowActive ? 'Earth Blocking Sun' : 'Direct Sunlight'}
                 </div>
               </div>
@@ -335,17 +335,17 @@ export default function DirectCommsPage() {
               </span>
             </div>
 
-            <p className={`font-mono text-[11px] ${frame.linkUp ? 'text-success' : 'text-danger'}`}>
+            <p className={`font-mono text-sm ${frame.linkUp ? 'text-success' : 'text-danger'}`}>
               {frame.linkStatusDetail}
             </p>
 
             <div className="grid grid-cols-2 gap-2 font-mono text-xs">
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">ACTIVE DSN DISH</div>
+                <div className="text-xs text-fg-dim">ACTIVE DSN DISH</div>
                 <div className="mt-0.5 truncate text-sm font-bold text-fg">
                   {frame.activeDish ? frame.activeDish.name : 'No Dish Locked'}
                 </div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   {frame.activeDish
                     ? `Dish El: ${frame.activeDish.elevationToMoonDeg}°`
                     : 'Below 4° / Blocked'}
@@ -353,27 +353,27 @@ export default function DirectCommsPage() {
               </div>
 
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">EARTH EL / RIDGE MASK</div>
+                <div className="text-xs text-fg-dim">EARTH EL / RIDGE MASK</div>
                 <div className="mt-0.5 text-sm font-bold text-cyan">
-                  {frame.earthElDeg.toFixed(1)}° <span className="text-[11px] font-normal text-fg-muted">/ {frame.earthHorizonElDeg.toFixed(1)}°</span>
+                  {frame.earthElDeg.toFixed(1)}° <span className="text-sm font-normal text-fg-muted">/ {frame.earthHorizonElDeg.toFixed(1)}°</span>
                 </div>
-                <div className="text-[10px] text-fg-dim">Azimuth {frame.earthAzDeg.toFixed(1)}°</div>
+                <div className="text-xs text-fg-dim">Azimuth {frame.earthAzDeg.toFixed(1)}°</div>
               </div>
 
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">THROUGHPUT / SNR</div>
+                <div className="text-xs text-fg-dim">THROUGHPUT / SNR</div>
                 <div className={`mt-0.5 text-sm font-bold ${frame.linkUp ? 'text-success' : 'text-danger'}`}>
                   {frame.rateMbps} Mbps
                 </div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   SNR {frame.snrDb} dB{frame.solarNoisePenaltyDb > 0 ? ` (-${frame.solarNoisePenaltyDb}dB sun)` : ''}
                 </div>
               </div>
 
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">CISLUNAR DELAY</div>
+                <div className="text-xs text-fg-dim">CISLUNAR DELAY</div>
                 <div className="mt-0.5 text-sm font-bold text-fg">{frame.oneWayDelaySec} s</div>
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   RTT {frame.rttSec} s • {frame.slantRangeKm.toLocaleString()} km
                 </div>
               </div>
@@ -417,7 +417,7 @@ export default function DirectCommsPage() {
                   key={bKey}
                   type="button"
                   onClick={() => setBand(bKey)}
-                  className={`rounded border px-2 py-1.5 text-[11px] font-medium transition cursor-pointer ${
+                  className={`rounded border px-2 py-1.5 text-sm font-medium transition cursor-pointer ${
                     band === bKey
                       ? 'border-cyan bg-cyan/15 text-cyan'
                       : 'border-line bg-bg/60 text-fg-muted hover:text-fg'
@@ -467,7 +467,7 @@ export default function DirectCommsPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2 text-[11px]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2 text-sm">
               <span className="text-fg-dim">DSN Dishes:</span>
               <div className="flex flex-wrap gap-3">
                 {DIRECT_DSN_STATIONS.map((st) => {

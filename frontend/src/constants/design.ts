@@ -6,10 +6,11 @@ export const COLORS = {
   cyan: '#00D9FF',
   blue: '#3285FF',
   textPrimary: '#F4F7FC',
-  textSecondary: '#94A3B8',
-  warning: '#FFB547',
+  textSecondary: '#C2CEDF',
+  warning: '#9BB8D6',
   danger: '#FF5263',
-  success: '#42D392',
+  success: '#7AB0FF',
+  accent: '#8B9CFF',
 } as const;
 
 export const TIME_STANDARD = 'UTC';

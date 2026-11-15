@@ -19,7 +19,7 @@ export function Label3D({ position, children, className = '' }: { position: Vect
     <Html position={position} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
       <div
         ref={ref}
-        className={`whitespace-nowrap rounded border border-line-strong bg-bg/80 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-fg shadow transition-opacity ${className}`}
+        className={`whitespace-nowrap rounded border border-line-strong bg-bg/80 px-1.5 py-0.5 font-mono text-xs tracking-wider text-fg shadow transition-opacity ${className}`}
       >
         {children}
       </div>

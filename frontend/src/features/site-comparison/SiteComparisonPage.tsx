@@ -347,7 +347,7 @@ function UtcTimeField({
 
       {open && (
         <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded border border-line-strong bg-panel p-1.5 shadow-xl">
-          <div className="mb-1 px-1 font-mono text-[10px] text-fg-dim">
+          <div className="mb-1 px-1 font-mono text-xs text-fg-dim">
             Pick hour or type HH:MM
           </div>
           <div className="grid grid-cols-4 gap-1">
@@ -360,7 +360,7 @@ function UtcTimeField({
                   setDraft(t);
                   setOpen(false);
                 }}
-                className={`rounded px-1 py-1 font-mono text-[10px] transition cursor-pointer ${
+                className={`rounded px-1 py-1 font-mono text-xs transition cursor-pointer ${
                   normalized === t
                     ? 'bg-cyan text-bg font-bold'
                     : 'bg-bg/70 text-fg-muted hover:bg-cyan/15 hover:text-cyan'
@@ -527,7 +527,7 @@ function ScenarioEditorCard({
           </span>
           <div>
             <h2 className="text-sm font-semibold text-fg">Plan {badge}</h2>
-            <p className="font-mono text-[11px] text-fg-muted">
+            <p className="font-mono text-sm text-fg-muted">
               Score: <strong className="text-fg">{score}/100</strong>
               {isWinner && <span className="ml-1.5 text-success">• RECOMMENDED</span>}
             </p>
@@ -539,7 +539,7 @@ function ScenarioEditorCard({
             <button
               type="button"
               onClick={onImportExplorer}
-              className="rounded border border-cyan/40 bg-cyan/10 px-2 py-1 text-[10px] font-medium text-cyan hover:bg-cyan/20 cursor-pointer"
+              className="rounded border border-cyan/40 bg-cyan/10 px-2 py-1 text-xs font-medium text-cyan hover:bg-cyan/20 cursor-pointer"
             >
               Use Explorer Pick
             </button>
@@ -547,7 +547,7 @@ function ScenarioEditorCard({
           <button
             type="button"
             onClick={onSaveToQueue}
-            className="inline-flex items-center gap-1 rounded border border-line-strong bg-bg/70 px-2 py-1 text-[10px] font-medium text-fg-muted hover:border-cyan/60 hover:text-cyan cursor-pointer"
+            className="inline-flex items-center gap-1 rounded border border-line-strong bg-bg/70 px-2 py-1 text-xs font-medium text-fg-muted hover:border-cyan/60 hover:text-cyan cursor-pointer"
           >
             <Plus className="size-3" /> Queue
           </button>
@@ -555,7 +555,7 @@ function ScenarioEditorCard({
       </div>
 
       {/* Source Tabs */}
-      <div className="grid grid-cols-3 gap-1 rounded border border-line bg-bg/70 p-1 text-[11px] font-semibold">
+      <div className="grid grid-cols-3 gap-1 rounded border border-line bg-bg/70 p-1 text-sm font-semibold">
         <button
           type="button"
           onClick={() => onChange({ ...cfg, mode: 'preset' })}
@@ -757,7 +757,7 @@ function ScenarioEditorCard({
         </div>
       </div>
 
-      <p className="truncate font-mono text-[10px] text-fg-muted">
+      <p className="truncate font-mono text-xs text-fg-muted">
         {cfg.delayDays > 0 && (
           <span className="text-cyan">
             Touchdown: {safeToUtcIso(cfg.landingDate, cfg.landingTime).slice(0, 10)} +{cfg.delayDays}d →{' '}
@@ -826,7 +826,7 @@ function StripTimelineRow({
         <span className={`font-semibold ${accentClass}`}>
           {label}: {evalData.site.name} ({evalData.durationDays}d)
         </span>
-        <span className="font-mono text-[11px] text-fg-muted">
+        <span className="font-mono text-sm text-fg-muted">
           Sun {evalData.sunlightPercent}% • Comms {evalData.effectiveCommsPercent}% • Max Dark{' '}
           {evalData.maxDarkHours}h
         </span>
@@ -1002,7 +1002,7 @@ export default function SiteComparisonPage() {
           <p className="text-sm text-fg-muted" data-testid="scenario-count">
             Scenarios queued: <strong className="font-mono text-fg">{scenarios.length}</strong>
           </p>
-          <span className="rounded border border-line-strong bg-bg/70 px-2.5 py-0.5 font-mono text-[11px] text-cyan">
+          <span className="rounded border border-line-strong bg-bg/70 px-2.5 py-0.5 font-mono text-sm text-cyan">
             A↔B Separation: {pairDistanceKm.toLocaleString()} km
           </span>
         </div>
@@ -1062,7 +1062,7 @@ export default function SiteComparisonPage() {
                 className="flex items-center gap-1.5 rounded border border-line-strong bg-bg/70 px-2.5 py-1 text-xs"
               >
                 <span className="font-medium text-fg">{q.label}</span>
-                <span className="font-mono text-[10px] text-fg-muted">({q.missionDurationDays}d)</span>
+                <span className="font-mono text-xs text-fg-muted">({q.missionDurationDays}d)</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -1076,7 +1076,7 @@ export default function SiteComparisonPage() {
                       delayDays: 0,
                     }))
                   }
-                  className="rounded bg-cyan/15 px-1.5 py-0.5 text-[10px] font-semibold text-cyan hover:bg-cyan/25 cursor-pointer"
+                  className="rounded bg-cyan/15 px-1.5 py-0.5 text-xs font-semibold text-cyan hover:bg-cyan/25 cursor-pointer"
                 >
                   Load A
                 </button>
@@ -1093,7 +1093,7 @@ export default function SiteComparisonPage() {
                       delayDays: 0,
                     }))
                   }
-                  className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-semibold text-warning hover:bg-warning/25 cursor-pointer"
+                  className="rounded bg-warning/15 px-1.5 py-0.5 text-xs font-semibold text-warning hover:bg-warning/25 cursor-pointer"
                 >
                   Load B
                 </button>
@@ -1173,7 +1173,7 @@ export default function SiteComparisonPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-line-strong text-[11px] uppercase tracking-wider text-fg-muted">
+              <tr className="border-b border-line-strong text-sm uppercase tracking-wider text-fg-muted">
                 <th className="py-2 px-3">Metric</th>
                 <th className="py-2 px-3 text-cyan">
                   Plan A: {siteA.name} ({evalA.durationDays}d)
@@ -1257,7 +1257,7 @@ export default function SiteComparisonPage() {
             <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-fg-muted">
               <Info className="size-3.5 text-cyan" /> Why These Verdicts Were Assigned
             </h3>
-            <span className="font-mono text-[10px] text-fg-dim">
+            <span className="font-mono text-xs text-fg-dim">
               NO-GO Gates: Sun &lt; 65% • Max Dark &gt; 50h • Min Temp &lt; -215°C • Comms &lt; 35%
             </span>
           </div>
@@ -1296,7 +1296,7 @@ export default function SiteComparisonPage() {
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2 border-t border-line/70 pt-1.5 font-mono text-[11px] text-cyan">
+                  <p className="mt-2 border-t border-line/70 pt-1.5 font-mono text-sm text-cyan">
                     {info.suggestion}
                   </p>
                 </div>
@@ -1315,13 +1315,13 @@ export default function SiteComparisonPage() {
               <Radio className="size-4 text-cyan" />
               Sunlight & Comms Timelines
             </h3>
-            <span className="font-mono text-[10px] text-fg-dim">
+            <span className="font-mono text-xs text-fg-dim">
               Amber: Sun • Cyan: DTE • Green: Relay • Red: Blackout
             </span>
           </div>
           <StripTimelineRow label="Plan A" evalData={evalA} accentClass="text-cyan" />
           <StripTimelineRow label="Plan B" evalData={evalB} accentClass="text-warning" />
-          <div className="grid grid-cols-1 gap-2 pt-1 text-[11px] text-fg-muted sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 pt-1 text-sm text-fg-muted sm:grid-cols-2">
             <div className="flex items-start gap-1.5">
               <MapPin className="mt-0.5 size-3.5 shrink-0 text-cyan" />
               <span>{siteA.scienceValue}</span>

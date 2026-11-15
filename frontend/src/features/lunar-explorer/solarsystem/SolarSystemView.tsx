@@ -94,7 +94,7 @@ function LandingSitePin() {
         zIndexRange={[50, 0]}
       >
         <div className="flex flex-col items-center rounded border border-cyan-400/70 bg-bg/95 px-2 py-1 shadow-lg backdrop-blur">
-          <div className="font-mono text-[9px] font-semibold text-cyan-300">LANDING SITE</div>
+          <div className="font-mono text-xs font-semibold text-cyan-300">LANDING SITE</div>
           <div className="font-mono text-[8px] text-fg">
             {formatLatitude(lat)} {formatLongitude(lon)}
           </div>
@@ -240,10 +240,10 @@ export const SolarSystemView = memo(function SolarSystemView() {
           <SunBody />
           <Html position={[0, 3.4, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
             <div className="flex flex-col items-center rounded border border-amber-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur">
-              <div className="font-mono text-[10px] font-semibold tracking-wider text-amber-400">
+              <div className="font-mono text-xs font-semibold tracking-wider text-amber-400">
                 <span className="size-2 rounded-full bg-amber-400 animate-pulse" /> THE SUN
               </div>
-              <div className="font-mono text-[9px] text-fg-muted">Illumination source · center of system</div>
+              <div className="font-mono text-xs text-fg-muted">Illumination source · center of system</div>
             </div>
           </Html>
         </group>
@@ -264,10 +264,10 @@ export const SolarSystemView = memo(function SolarSystemView() {
           <EarthBody />
           <Html position={[0, EARTH_RADIUS + 0.9, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
             <div className="flex flex-col items-center rounded border border-blue-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur">
-              <div className="font-mono text-[10px] font-semibold tracking-wider text-blue-400">
+              <div className="font-mono text-xs font-semibold tracking-wider text-blue-400">
                 <span className="size-2 rounded-full bg-blue-400 animate-pulse" /> EARTH
               </div>
-              <div className="font-mono text-[9px] text-fg-muted">12,756 km · orbits the Sun</div>
+              <div className="font-mono text-xs text-fg-muted">12,756 km · orbits the Sun</div>
             </div>
           </Html>
         </group>
@@ -277,10 +277,10 @@ export const SolarSystemView = memo(function SolarSystemView() {
           {siteCoords && <LandingSitePin />}
           <Html position={[0, MOON_RADIUS + 0.5, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
             <div className="flex flex-col items-center rounded border border-cyan-400/60 bg-bg/95 px-2.5 py-1 shadow-lg backdrop-blur">
-              <div className="font-mono text-[10px] font-semibold tracking-wider text-cyan-300">
+              <div className="font-mono text-xs font-semibold tracking-wider text-cyan-300">
                 <span className="size-2 rounded-full bg-cyan-400 animate-pulse" /> MOON
               </div>
-              <div className="font-mono text-[9px] text-fg-muted">
+              <div className="font-mono text-xs text-fg-muted">
                 3,474 km · tidally locked · site: {siteLabel}
               </div>
             </div>
@@ -290,14 +290,14 @@ export const SolarSystemView = memo(function SolarSystemView() {
         {siteCoords && (
           <Html position={[12, 8, 12]} center style={{ pointerEvents: 'none' }} zIndexRange={[50, 0]}>
             <div className="flex flex-col items-center rounded border border-cyan-400/50 bg-bg/95 px-2 py-1 shadow-lg backdrop-blur">
-              <div className="font-mono text-[9px] font-semibold text-cyan-300">Earth visibility line</div>
+              <div className="font-mono text-xs font-semibold text-cyan-300">Earth visibility line</div>
               <div className="font-mono text-[8px] text-fg-muted">Line-of-sight from landing site to Earth</div>
             </div>
           </Html>
         )}
       </Canvas>
 
-      <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-col items-center gap-1 text-[11px] text-fg-muted">
+      <div className="absolute bottom-3 left-3 right-3 z-10 flex flex-col items-center gap-1 text-sm text-fg-muted">
         <div className="flex items-center gap-2">
           <span className="size-2 rounded-full bg-[#fff0a0]" /> Sun (illumination source)
         </div>

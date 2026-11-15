@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
-import { CircleAlert, Info, TriangleAlert, CircleCheck, X } from 'lucide-react';
+import { CircleAlert, Info, CircleCheck, X } from 'lucide-react';
 import { useUiStore, type Toast, type ToastTone } from '@/stores/uiStore';
 
 const TONE: Record<ToastTone, { cls: string; icon: typeof Info }> = {
   error: { cls: 'border-danger/50 text-danger', icon: CircleAlert },
-  warning: { cls: 'border-warning/50 text-warning', icon: TriangleAlert },
   info: { cls: 'border-cyan/50 text-cyan', icon: Info },
-  success: { cls: 'border-success/50 text-success', icon: CircleCheck },
+  notice: { cls: 'border-blue/50 text-blue', icon: CircleCheck },
 };
 
 function ToastItem({ toast }: { toast: Toast }) {

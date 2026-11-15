@@ -52,7 +52,7 @@ function LunarTerrain() {
 
 function Lander({ position }: { position: [number, number, number] }) {
   const { scene } = useGLTF('/models/lander.glb');
-  return <group position={position}><primitive object={scene.clone()} scale={0.080} /><Html distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-[10px] text-yellow-200"> Lander</span></Html></group>;
+  return <group position={position}><primitive object={scene.clone()} scale={0.080} /><Html distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-xs text-yellow-200"> Lander</span></Html></group>;
 }
 
 function EarthModel({ position }: { position: [number, number, number] }) {
@@ -66,7 +66,7 @@ function MoonPerspectiveScene({ earthPosition, elevation, azimuth, visible }: { 
     <ambientLight intensity={1.1} /><directionalLight position={[3, 5, 4]} intensity={4} color="#dbeafe" /><Stars radius={30} depth={18} count={800} factor={1.5} fade />
     <LunarTerrain /><Lander position={lander} /><EarthModel position={earthPosition} />
     <Line points={[new Vector3(...lander), new Vector3(...earthPosition)]} color={visible ? '#22c55e' : '#ef4444'} lineWidth={2} dashed dashSize={0.08} gapSize={0.06} />
-    <Html position={earthPosition} distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-[10px] text-cyan-200">Earth · Elev {elevation.toFixed(1)}° · Az {azimuth.toFixed(0)}°</span></Html>
+    <Html position={earthPosition} distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-xs text-cyan-200">Earth · Elev {elevation.toFixed(1)}° · Az {azimuth.toFixed(0)}°</span></Html>
     <OrbitControls enablePan={false} minDistance={4} maxDistance={14} target={[0, 0.7, -1.4]} />
   </>;
 }
@@ -106,7 +106,7 @@ export function MoonEarthVisibilityAnalysis() {
       <div className="relative h-[min(560px,65vh)] min-h-[400px] overflow-hidden rounded-xl border border-cyan-300/20 bg-[#020617]"><Canvas camera={{ position: [0, 1.8, 8], fov: 48 }} dpr={[1, 2]}><MoonPerspectiveScene earthPosition={earthPosition} elevation={direction.elevation} azimuth={direction.azimuth} visible={visible} /></Canvas><div className="pointer-events-none absolute left-3 top-3 rounded border border-white/10 bg-slate-950/80 px-3 py-2 text-xs text-slate-200">Lunar lander viewpoint · generated Moon surface</div></div>
     </section>
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Earth elevation" value={`${direction.elevation.toFixed(1)}°`} good={visible} /><Metric label="Earth azimuth" value={`${direction.azimuth.toFixed(0)}°`} /><Metric label="Visibility" value={visible ? 'DIRECT' : 'BLOCKED'} good={visible} /><Metric label="One-way light time" value={`${(EARTH_MOON_DISTANCE_KM / C_KM_S).toFixed(3)} s`} /></section>
-    <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold text-fg">24-hour communication timeline</h3><p className="text-xs text-muted">Green means Earth is above the configured terrain mask.</p></div><div className="text-xs text-muted">Observer height: {observerHeight} m · Analysis time: +{timeOffset.toFixed(1)} h</div></div><div className="mt-4 grid grid-cols-24 gap-1">{timeline.map((isVisible, hour) => <div key={hour} className={`h-7 rounded-sm ${isVisible ? 'bg-emerald-500' : 'bg-rose-500/70'}`} title={`${hour}:00 UTC · ${isVisible ? 'Visible' : 'Blocked'}`} />)}</div><input className="mt-4 w-full accent-cyan-400" type="range" min={0} max={24} step={0.5} value={timeOffset} onChange={event => setTimeOffset(Number(event.target.value))} /><div className="mt-1 flex justify-between text-[11px] text-muted"><span>Now</span><span>+12 hours</span><span>+24 hours</span></div></section>
+    <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold text-fg">24-hour communication timeline</h3><p className="text-xs text-muted">Green means Earth is above the configured terrain mask.</p></div><div className="text-xs text-muted">Observer height: {observerHeight} m · Analysis time: +{timeOffset.toFixed(1)} h</div></div><div className="mt-4 grid grid-cols-24 gap-1">{timeline.map((isVisible, hour) => <div key={hour} className={`h-7 rounded-sm ${isVisible ? 'bg-emerald-500' : 'bg-rose-500/70'}`} title={`${hour}:00 UTC · ${isVisible ? 'Visible' : 'Blocked'}`} />)}</div><input className="mt-4 w-full accent-cyan-400" type="range" min={0} max={24} step={0.5} value={timeOffset} onChange={event => setTimeOffset(Number(event.target.value))} /><div className="mt-1 flex justify-between text-sm text-muted"><span>Now</span><span>+12 hours</span><span>+24 hours</span></div></section>
   </div>;
 }
 

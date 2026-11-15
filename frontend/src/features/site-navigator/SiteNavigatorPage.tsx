@@ -81,7 +81,7 @@ export default function SiteNavigatorPage() {
                 type="button"
                 aria-pressed={filter === c}
                 onClick={() => setFilter(c)}
-                className={`btn px-2.5 py-1 text-[11px] ${filter === c ? 'btn-primary' : ''}`}
+                className={`btn px-2.5 py-1 text-sm ${filter === c ? 'btn-primary' : ''}`}
               >
                 {c === 'all' ? 'All' : CATEGORY_STYLE[c].plural}
               </button>
@@ -106,7 +106,7 @@ export default function SiteNavigatorPage() {
                     <h2 className="text-sm font-semibold">{site.name}</h2>
                     <span className="size-2.5 shrink-0 rounded-full" style={{ background: style.color }} title={style.label} aria-label={style.label} />
                   </div>
-                  <p className="mt-0.5 font-mono text-[11px] text-fg-muted">
+                  <p className="mt-0.5 font-mono text-sm text-fg-muted">
                     {formatLatitude(site.coordinates.latitude_deg)} · {formatLongitude(site.coordinates.longitude_deg)}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -114,7 +114,7 @@ export default function SiteNavigatorPage() {
                     {note ? <StatusBadge tone="warning">{site.precision}</StatusBadge> : null}
                     <StatusBadge tone="neutral">{site.provenance}</StatusBadge>
                   </div>
-                  {note ? <p className="mt-1.5 text-[11px] text-warning">{note}</p> : null}
+                  {note ? <p className="mt-1.5 text-sm text-warning">{note}</p> : null}
                   <p className="mt-1.5 text-xs text-fg-muted">{site.description}</p>
                   <button
                     type="button"

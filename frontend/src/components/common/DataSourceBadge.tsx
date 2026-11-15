@@ -34,7 +34,7 @@ export function DataQualityMeter({ quality }: { quality: DataQuality }) {
           <span key={i} className={`h-2.5 w-1.5 rounded-[1px] ${i < filled ? SEGMENT_COLOR[quality] : 'bg-line-strong'}`} />
         ))}
       </span>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{STYLE[quality].label}</span>
+      <span className="text-xs font-semibold uppercase tracking-wider text-fg-muted">{STYLE[quality].label}</span>
     </span>
   );
 }

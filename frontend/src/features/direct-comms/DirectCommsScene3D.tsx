@@ -530,7 +530,7 @@ function OrbitalDirectStage({
           zIndexRange={[8, 0]}
           style={{ pointerEvents: 'none', display: active && showLabels ? 'block' : 'none' }}
         >
-          <div className="whitespace-nowrap rounded border border-warning/60 bg-bg/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-warning">
+          <div className="whitespace-nowrap rounded border border-warning/60 bg-bg/90 px-2 py-0.5 font-mono text-xs font-semibold text-warning">
             SUN • Phase {uiFrame.synodicPhaseDeg.toFixed(0)}°
           </div>
         </Html>
@@ -574,7 +574,7 @@ function OrbitalDirectStage({
           zIndexRange={[8, 0]}
           style={{ pointerEvents: 'none', display: active && showLabels ? 'block' : 'none' }}
         >
-          <div className="whitespace-nowrap rounded border border-cyan/60 bg-bg/90 px-1.5 py-0.5 font-mono text-[9px] text-cyan">
+          <div className="whitespace-nowrap rounded border border-cyan/60 bg-bg/90 px-1.5 py-0.5 font-mono text-xs text-cyan">
             {config.site.name} ({config.site.lat.toFixed(1)}°, {config.site.lon.toFixed(1)}°)
           </div>
         </Html>
@@ -607,7 +607,7 @@ function OrbitalDirectStage({
             style={{ pointerEvents: 'none', display: active && showLabels ? 'block' : 'none' }}
           >
             <div
-              className={`whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-[9px] ${
+              className={`whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-xs ${
                 dish.active
                   ? 'border-success/70 bg-bg/90 text-success'
                   : 'border-warning/50 bg-bg/85 text-warning'
@@ -899,7 +899,7 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
                 key={key}
                 type="button"
                 onClick={() => setCamReq((p) => ({ id: p.id + 1, target: key }))}
-                className="btn py-1 px-2 text-[11px] cursor-pointer"
+                className="btn py-1 px-2 text-sm cursor-pointer"
               >
                 <Icon className="size-3" /> {label}
               </button>
@@ -966,7 +966,7 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
 
         {/* Bottom Legend */}
         <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-3 rounded border border-line bg-bg/85 px-3 py-1.5 font-mono text-[10px] text-fg-muted backdrop-blur">
+          <div className="flex flex-wrap items-center gap-3 rounded border border-line bg-bg/85 px-3 py-1.5 font-mono text-xs text-fg-muted backdrop-blur">
             <span className="flex items-center gap-1">
               <span className="inline-block size-2 rounded-full bg-success" /> Direct RF Beam (Up)
             </span>
@@ -977,7 +977,7 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
               <span className="inline-block size-2 rounded-full bg-warning" /> Moving Sun &amp; Shadows
             </span>
           </div>
-          <div className="rounded border border-line bg-bg/85 px-2.5 py-1 font-mono text-[10px] text-fg-muted backdrop-blur">
+          <div className="rounded border border-line bg-bg/85 px-2.5 py-1 font-mono text-xs text-fg-muted backdrop-blur">
             {viewMode === 'ORBITAL'
               ? 'Drag: Rotate • Scroll: Zoom • Click Moon: Select Site'
               : 'Drag: Look around Lunar Ridge • Scroll: Zoom'}

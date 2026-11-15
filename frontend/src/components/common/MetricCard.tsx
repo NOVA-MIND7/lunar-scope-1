@@ -22,7 +22,7 @@ export function MetricCard({ label, value, unit, description, icon: Icon, qualit
     return (
       <article className="panel flex flex-col justify-between p-2 px-3 gap-1 shadow-sm" aria-label={label} data-testid="metric-card">
         <header className="flex items-center justify-between gap-1.5">
-          <h3 className="label text-[10px] tracking-wider truncate">{label}</h3>
+          <h3 className="label text-xs tracking-wider truncate">{label}</h3>
           <Icon className="size-3.5 text-cyan shrink-0" aria-hidden />
         </header>
         <div className="flex items-baseline justify-between gap-2">
@@ -35,10 +35,10 @@ export function MetricCard({ label, value, unit, description, icon: Icon, qualit
           </p>
           <DataQualityMeter quality={quality} />
         </div>
-        <p className="truncate text-[10px] text-fg-muted leading-tight" title={description}>
+        <p className="truncate text-xs text-fg-muted leading-tight" title={description}>
           {description}
         </p>
-        {context ? <p className="truncate text-[9px] text-fg-dim border-t border-line/60 pt-0.5">{context}</p> : null}
+        {context ? <p className="truncate text-xs text-fg-dim border-t border-line/60 pt-0.5">{context}</p> : null}
       </article>
     );
   }
@@ -59,7 +59,7 @@ export function MetricCard({ label, value, unit, description, icon: Icon, qualit
       <p className="text-xs leading-relaxed text-fg-muted">{description}</p>
       <footer className="mt-auto flex flex-col gap-1.5 border-t border-line pt-3">
         <DataQualityMeter quality={quality} />
-        {context ? <p className="truncate text-[11px] text-fg-dim">{context}</p> : null}
+        {context ? <p className="truncate text-sm text-fg-dim">{context}</p> : null}
       </footer>
     </article>
   );

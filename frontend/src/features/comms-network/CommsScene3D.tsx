@@ -691,7 +691,7 @@ function CommsStage({
       <CislunarMoonMesh />
       {showLabels && (
         <Html position={[MOON_CENTER[0], MOON_RADIUS_SCENE + 0.42, 0]} center zIndexRange={[10, 0]}>
-          <div className="pointer-events-none whitespace-nowrap rounded border border-cyan/50 bg-bg/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-cyan">
+          <div className="pointer-events-none whitespace-nowrap rounded border border-cyan/50 bg-bg/90 px-2 py-0.5 font-mono text-xs font-semibold text-cyan">
             MOON • R = 1,737 km
           </div>
         </Html>
@@ -701,7 +701,7 @@ function CommsStage({
       <CislunarEarthMesh spinRef={earthSpinGroupRef} />
       {showLabels && (
         <Html position={[EARTH_CENTER[0], EARTH_RADIUS_SCENE + 0.42, 0]} center zIndexRange={[10, 0]}>
-          <div className="pointer-events-none whitespace-nowrap rounded border border-blue/60 bg-bg/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-blue">
+          <div className="pointer-events-none whitespace-nowrap rounded border border-blue/60 bg-bg/90 px-2 py-0.5 font-mono text-xs font-semibold text-blue">
             EARTH • ~384,400 km
           </div>
         </Html>
@@ -713,7 +713,7 @@ function CommsStage({
           <LunarRoverModel linkUp={linkUpUi} />
           {showLabels && (
             <Html position={[0, 0.28, 0]} center zIndexRange={[10, 0]}>
-              <div className="pointer-events-none whitespace-nowrap rounded border border-success/60 bg-bg/90 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-success">
+              <div className="pointer-events-none whitespace-nowrap rounded border border-success/60 bg-bg/90 px-1.5 py-0.5 font-mono text-xs font-semibold text-success">
                 {activeRover.label}
               </div>
             </Html>
@@ -737,7 +737,7 @@ function CommsStage({
           </Suspense>
           {showLabels && (
             <Html position={[0, 0.22, 0]} center zIndexRange={[10, 0]}>
-              <div className="pointer-events-none whitespace-nowrap rounded border border-cyan/50 bg-bg/90 px-1.5 py-0.5 font-mono text-[9px] text-cyan">
+              <div className="pointer-events-none whitespace-nowrap rounded border border-cyan/50 bg-bg/90 px-1.5 py-0.5 font-mono text-xs text-cyan">
                 {sat.label}
               </div>
             </Html>
@@ -761,7 +761,7 @@ function CommsStage({
           </Suspense>
           {showLabels && (
             <Html position={[0, 0.22, 0]} center zIndexRange={[10, 0]}>
-              <div className="pointer-events-none whitespace-nowrap rounded border border-cyan/50 bg-bg/90 px-1.5 py-0.5 font-mono text-[9px] text-fg">
+              <div className="pointer-events-none whitespace-nowrap rounded border border-cyan/50 bg-bg/90 px-1.5 py-0.5 font-mono text-xs text-fg">
                 {sat.label}
               </div>
             </Html>
@@ -789,7 +789,7 @@ function CommsStage({
           </mesh>
           {showLabels && (
             <Html position={[0, 0.26, 0]} center zIndexRange={[10, 0]}>
-              <div className="pointer-events-none whitespace-nowrap rounded border border-warning/60 bg-bg/90 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-warning">
+              <div className="pointer-events-none whitespace-nowrap rounded border border-warning/60 bg-bg/90 px-1.5 py-0.5 font-mono text-xs font-semibold text-warning">
                 {dish.label}
               </div>
             </Html>

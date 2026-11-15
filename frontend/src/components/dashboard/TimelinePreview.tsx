@@ -52,7 +52,7 @@ function Track({
               />
             ))
           : (
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] uppercase tracking-wider text-fg-dim">
+            <span className="absolute inset-0 flex items-center justify-center text-xs uppercase tracking-wider text-fg-dim">
               No computed data
             </span>
           )}
@@ -124,7 +124,7 @@ export function TimelinePreview({ startUtc, durationDays }: TimelinePreviewProps
               role="switch"
               aria-checked={showDemo}
               onClick={() => setShowDemo((v) => !v)}
-              className="btn px-2 py-0.5 text-[10px]"
+              className="btn px-2 py-0.5 text-xs"
             >
               {showDemo ? 'Hide demo' : 'Show demo'}
             </button>
@@ -152,7 +152,7 @@ export function TimelinePreview({ startUtc, durationDays }: TimelinePreviewProps
           <p className="label">Mission window</p>
           <div className="relative h-5 rounded-sm border border-cyan/50 bg-cyan/10" data-testid="mission-window">
             <span className="absolute -left-px top-[-5px] h-[calc(100%+10px)] w-px bg-cyan" aria-hidden />
-            <span className="absolute inset-0 flex items-center px-2 text-[10px] font-semibold uppercase tracking-wider text-cyan">
+            <span className="absolute inset-0 flex items-center px-2 text-xs font-semibold uppercase tracking-wider text-cyan">
               Landing ▸ {pluralDays(durationDays)}
             </span>
           </div>
@@ -186,7 +186,7 @@ export function TimelinePreview({ startUtc, durationDays }: TimelinePreviewProps
                 }}
               >
                 <span className="h-1.5 w-px bg-line-strong" />
-                <span className="whitespace-nowrap font-mono text-[10px] text-fg-muted">{t.label}</span>
+                <span className="whitespace-nowrap font-mono text-xs text-fg-muted">{t.label}</span>
               </span>
             ))}
           </div>

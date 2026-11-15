@@ -1,4 +1,4 @@
-ï»¿import { Sun, Satellite, ClipboardList, Crosshair } from 'lucide-react';
+import { Sun, Satellite, ClipboardList, Crosshair } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MissionPanel } from '@/components/common/MissionPanel';
 import { DataRow } from '@/components/common/DataRow';
@@ -45,8 +45,8 @@ export function SolarConditions() {
   return (
     <MissionPanel title="Solar conditions" icon={Sun}>
       <dl>
-        <DataRow label="Solar elevation">{solarEl.toFixed(1)}Â°</DataRow>
-        <DataRow label="Solar azimuth">{solarAz.toFixed(1)}Â°</DataRow>
+        <DataRow label="Solar elevation">{solarEl.toFixed(1)}°</DataRow>
+        <DataRow label="Solar azimuth">{solarAz.toFixed(1)}°</DataRow>
         <DataRow label="Sunlight status" mono={false}>
           {isSunlit ? (
             <StatusIndicator state="online" label="Sunlit (Direct Illumination)" />
@@ -78,8 +78,8 @@ export function EarthConditions() {
   return (
     <MissionPanel title="Earth conditions" icon={Satellite}>
       <dl>
-        <DataRow label="Earth elevation">{earthEl.toFixed(1)}Â°</DataRow>
-        <DataRow label="Earth azimuth">{earthAz.toFixed(1)}Â°</DataRow>
+        <DataRow label="Earth elevation">{earthEl.toFixed(1)}°</DataRow>
+        <DataRow label="Earth azimuth">{earthAz.toFixed(1)}°</DataRow>
         <DataRow label="Direct visibility" mono={false}>
           {isVisible ? (
             <StatusIndicator state="online" label="Direct Line-of-Sight Active" />
@@ -106,14 +106,14 @@ export function MissionStatus() {
           {site ? site.name : <span className="text-fg-dim">None selected</span>}
         </DataRow>
         <DataRow label="Date (UTC)">
-          {date} Â· {time}
+          {date} · {time}
         </DataRow>
         <DataRow label="Mission duration">{pluralDays(duration)}</DataRow>
         <DataRow label="Engine status" mono={false}>
           {backend.isOnline ? (
             <StatusIndicator state="online" label="Ephemeris Engine Connected" />
           ) : backend.isPending ? (
-            <StatusIndicator state="pending" label="Checking Engineâ€¦" />
+            <StatusIndicator state="pending" label="Checking Engine…" />
           ) : (
             <StatusIndicator state="offline" label="Backend Offline" />
           )}

@@ -99,13 +99,13 @@ function SiteControlCard({
             <button
               type="button"
               onClick={onImportGlobal}
-              className="rounded border border-cyan/40 bg-cyan/10 px-2 py-0.5 text-[10px] font-medium text-cyan hover:bg-cyan/20 cursor-pointer"
+              className="rounded border border-cyan/40 bg-cyan/10 px-2 py-0.5 text-xs font-medium text-cyan hover:bg-cyan/20 cursor-pointer"
               title="Use coordinate selected in Lunar Explorer"
             >
               Use Explorer Pick
             </button>
           )}
-          <span className="rounded border border-cyan/40 bg-cyan/10 px-2 py-0.5 text-[10px] font-medium text-cyan">
+          <span className="rounded border border-cyan/40 bg-cyan/10 px-2 py-0.5 text-xs font-medium text-cyan">
             Click Globe or Select Preset
           </span>
         </div>
@@ -171,7 +171,7 @@ function SiteControlCard({
         </div>
       </div>
 
-      <p className="mt-2 text-[11px] text-fg-muted truncate" title={resolvedSite.description}>
+      <p className="mt-2 text-sm text-fg-muted truncate" title={resolvedSite.description}>
         {resolvedSite.program} • Elev: {resolvedSite.elevationMeters}m • Slope: {resolvedSite.slopeDeg}°
       </p>
     </div>
@@ -197,7 +197,7 @@ function SiteTelemetryCard({
             <MapPin className="size-4 shrink-0 text-cyan" />
             <h3 className="truncate text-sm font-semibold text-fg">{summary.site.name}</h3>
           </div>
-          <p className="mt-0.5 font-mono text-[11px] text-fg-muted">
+          <p className="mt-0.5 font-mono text-sm text-fg-muted">
             Lat {summary.site.lat.toFixed(2)}° • Lon {summary.site.lon.toFixed(2)}°
           </p>
         </div>
@@ -223,17 +223,17 @@ function SiteTelemetryCard({
       {/* Instantaneous Telemetry at Scrubbed UTC Step */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded border border-line bg-bg/60 p-2">
-          <div className="text-[10px] text-fg-muted flex items-center gap-1">
+          <div className="text-xs text-fg-muted flex items-center gap-1">
             <Sun className="size-3 text-warning" /> Sun Position
           </div>
           <div className="mt-0.5 font-mono text-sm font-bold text-fg">
-            {pt.sunEl.toFixed(1)}° <span className="text-[10px] text-fg-dim">el</span>
+            {pt.sunEl.toFixed(1)}° <span className="text-xs text-fg-dim">el</span>
           </div>
-          <div className="font-mono text-[10px] text-fg-muted">Az {pt.sunAz.toFixed(1)}°</div>
+          <div className="font-mono text-xs text-fg-muted">Az {pt.sunAz.toFixed(1)}°</div>
         </div>
 
         <div className="rounded border border-line bg-bg/60 p-2">
-          <div className="text-[10px] text-fg-muted flex items-center gap-1">
+          <div className="text-xs text-fg-muted flex items-center gap-1">
             <BatteryCharging className="size-3 text-success" /> Solar Power
           </div>
           <div
@@ -243,13 +243,13 @@ function SiteTelemetryCard({
           >
             {pt.solarWatts} W
           </div>
-          <div className="font-mono text-[10px] text-fg-muted">
+          <div className="font-mono text-xs text-fg-muted">
             {pt.isSunlit ? 'SUNLIT' : 'SHADOWED'} (Mask {pt.effectiveHorizonEl.toFixed(1)}°)
           </div>
         </div>
 
         <div className="rounded border border-line bg-bg/60 p-2">
-          <div className="text-[10px] text-fg-muted flex items-center gap-1">
+          <div className="text-xs text-fg-muted flex items-center gap-1">
             <Thermometer className="size-3 text-cyan" /> Surface Temp
           </div>
           <div
@@ -259,13 +259,13 @@ function SiteTelemetryCard({
           >
             {pt.surfaceTempC}°C
           </div>
-          <div className="font-mono text-[10px] text-fg-muted">
+          <div className="font-mono text-xs text-fg-muted">
             {summary.minTempC}°..{summary.maxTempC}°C
           </div>
         </div>
 
         <div className="rounded border border-line bg-bg/60 p-2">
-          <div className="text-[10px] text-fg-muted flex items-center gap-1">
+          <div className="text-xs text-fg-muted flex items-center gap-1">
             <Wind className="size-3 text-warning" /> Dust Lofting
           </div>
           <div
@@ -279,30 +279,30 @@ function SiteTelemetryCard({
           >
             {pt.dustIndex}/100
           </div>
-          <div className="truncate font-mono text-[10px] text-fg-muted">{pt.dustRisk}</div>
+          <div className="truncate font-mono text-xs text-fg-muted">{pt.dustRisk}</div>
         </div>
       </div>
 
       {/* Window Aggregate Metrics */}
       <div className="grid grid-cols-2 gap-2 border-t border-line pt-2.5 text-xs sm:grid-cols-4">
         <div>
-          <div className="text-[10px] text-fg-dim">Sunlight</div>
+          <div className="text-xs text-fg-dim">Sunlight</div>
           <div className="font-mono font-bold text-warning">
             {summary.sunlightPercent}% ({summary.sunlitHours}h)
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-fg-dim">Max Darkness</div>
+          <div className="text-xs text-fg-dim">Max Darkness</div>
           <div className="font-mono font-bold text-fg">{summary.maxDarkHours} hrs</div>
         </div>
         <div>
-          <div className="text-[10px] text-fg-dim">Avg / Energy</div>
+          <div className="text-xs text-fg-dim">Avg / Energy</div>
           <div className="font-mono font-bold text-success">
             {summary.avgWatts} W • {summary.totalEnergyKwh} kWh
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-fg-dim">Terrain Loss</div>
+          <div className="text-xs text-fg-dim">Terrain Loss</div>
           <div className="font-mono font-bold text-cyan">
             {summary.useTerrainHorizon ? `${summary.terrainShadowLossPercent}%` : 'Disabled'}
           </div>
@@ -471,7 +471,7 @@ export default function SolarAnalysisPage() {
               Simulation Inputs (Coordinates, UTC Window, Time Step & Terrain Horizon)
             </h2>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono">
+          <div className="flex flex-wrap items-center gap-2 text-sm font-mono">
             <span className="rounded border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-warning">
               Client-Side AstraRelay Physics • API POST /api/astronomy/sunlight (501)
             </span>
@@ -529,7 +529,7 @@ export default function SolarAnalysisPage() {
                     key={d}
                     type="button"
                     onClick={() => handleSetDurationDays(d)}
-                    className="rounded border border-line px-1.5 py-0.5 font-mono text-[10px] text-fg-muted hover:border-cyan/60 hover:text-cyan"
+                    className="rounded border border-line px-1.5 py-0.5 font-mono text-xs text-fg-muted hover:border-cyan/60 hover:text-cyan"
                   >
                     +{d}d
                   </button>
@@ -573,7 +573,7 @@ export default function SolarAnalysisPage() {
                 </option>
               ))}
             </select>
-            <div className="mt-1.5 font-mono text-[10px] text-fg-dim">
+            <div className="mt-1.5 font-mono text-xs text-fg-dim">
               Window: {sim.durationHours} hrs
             </div>
           </div>
@@ -597,7 +597,7 @@ export default function SolarAnalysisPage() {
             <select
               value={panelMode}
               onChange={(e) => setPanelMode(e.target.value as SolarPanelMode)}
-              className="mt-1.5 w-full rounded border border-line bg-bg px-2 py-1 text-[11px] text-fg-muted"
+              className="mt-1.5 w-full rounded border border-line bg-bg px-2 py-1 text-sm text-fg-muted"
             >
               <option value="VERTICAL_TRACKING">Array: Vertical Tracking (400W)</option>
               <option value="FLAT_HORIZONTAL">Array: Flat Horizontal (400W)</option>
@@ -611,7 +611,7 @@ export default function SolarAnalysisPage() {
               <button
                 type="button"
                 onClick={handleFindBestDate}
-                className="inline-flex items-center gap-1 rounded bg-cyan px-2 py-0.5 text-[10px] font-bold text-bg hover:opacity-90"
+                className="inline-flex items-center gap-1 rounded bg-cyan px-2 py-0.5 text-xs font-bold text-bg hover:opacity-90"
               >
                 <Sparkles className="size-3" /> Best Date
               </button>
@@ -627,7 +627,7 @@ export default function SolarAnalysisPage() {
               }}
               className="w-full accent-cyan cursor-pointer"
             />
-            <div className="mt-1 font-mono text-[10px] text-fg-dim">
+            <div className="mt-1 font-mono text-xs text-fg-dim">
               Shifts window +{delayDays} Earth days
             </div>
           </div>
@@ -653,7 +653,7 @@ export default function SolarAnalysisPage() {
           <div className="card space-y-2 p-4 text-xs text-fg-muted">
             <div className="label text-cyan">Site Science & Illumination Notes</div>
             <p className="leading-relaxed text-fg">{site.scienceValue}</p>
-            <p className="text-[11px] text-fg-dim">{site.description}</p>
+            <p className="text-sm text-fg-dim">{site.description}</p>
           </div>
         </div>
       </section>
@@ -778,7 +778,7 @@ export default function SolarAnalysisPage() {
             <h3 className="flex items-center gap-2 text-sm font-semibold text-fg">
               <Sun className="size-4 text-warning" /> Sun Elevation Profile (°)
             </h3>
-            <span className="font-mono text-[10px] text-fg-dim">UTC timeline</span>
+            <span className="font-mono text-xs text-fg-dim">UTC timeline</span>
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -814,7 +814,7 @@ export default function SolarAnalysisPage() {
             <h3 className="flex items-center gap-2 text-sm font-semibold text-fg">
               <BatteryCharging className="size-4 text-success" /> Solar Array Power Output (W)
             </h3>
-            <span className="font-mono text-[10px] text-fg-dim">400 W peak array</span>
+            <span className="font-mono text-xs text-fg-dim">400 W peak array</span>
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">

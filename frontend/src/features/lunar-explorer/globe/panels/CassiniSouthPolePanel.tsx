@@ -110,7 +110,7 @@ export function CassiniSouthPolePanel() {
     >
       <div className="space-y-3 text-xs">
         {/* 3 Lunar Orbiters Selector (3 Orbiting Sides) */}
-        <div className="flex gap-1 rounded border border-line bg-surface p-1 text-[10px]">
+        <div className="flex gap-1 rounded border border-line bg-surface p-1 text-xs">
           <button
             type="button"
             onClick={() => setSelectedSatelliteId('cassini')}
@@ -142,7 +142,7 @@ export function CassiniSouthPolePanel() {
 
         {/* Lunar Eclipse Alert Banner */}
         {eclipseFactor > 0.1 ? (
-          <div className="rounded border border-red-500/60 bg-red-950/60 p-2 text-red-200 animate-pulse text-[10px] font-mono flex items-center gap-1.5">
+          <div className="rounded border border-red-500/60 bg-red-950/60 p-2 text-red-200 animate-pulse text-xs font-mono flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-red-500 shrink-0" />
             <span>LUNAR ECLIPSE: Moon inside Earth's shadow cone ({Math.round(eclipseFactor * 100)}% umbra)</span>
           </div>
@@ -156,7 +156,7 @@ export function CassiniSouthPolePanel() {
               <span>ORBITAL TELEMETRY</span>
             </div>
             <span
-              className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase ${
+              className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold uppercase ${
                 telemetry.isOverSouthPole
                   ? 'border border-cyan/60 bg-cyan/20 text-cyan animate-pulse'
                   : 'border border-line bg-surface text-fg-dim'
@@ -166,7 +166,7 @@ export function CassiniSouthPolePanel() {
             </span>
           </div>
 
-          <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 font-mono text-[11px]">
+          <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 font-mono text-sm">
             <div>
               <span className="text-fg-dim">Lat: </span>
               <span className="font-semibold text-fg">{formatLatitude(telemetry.latitude_deg)}</span>
@@ -184,7 +184,7 @@ export function CassiniSouthPolePanel() {
               <span className="font-semibold text-fg">{telemetry.speed_kms} km/s</span>
             </div>
           </div>
-          <div className="mt-1.5 border-t border-cyan/20 pt-1 text-[10px] text-fg-muted">
+          <div className="mt-1.5 border-t border-cyan/20 pt-1 text-xs text-fg-muted">
             <span className="text-cyan font-medium">Nadir Track:</span> {telemetry.targetRegion}
           </div>
         </div>
@@ -194,14 +194,14 @@ export function CassiniSouthPolePanel() {
           <button
             type="button"
             onClick={focusSouthPoleAndSatellite}
-            className="btn btn-primary justify-center text-[11px] py-1.5"
+            className="btn btn-primary justify-center text-sm py-1.5"
           >
             <Compass className="size-3.5" /> Locate South Pole
           </button>
           <button
             type="button"
             onClick={handleToggleTrackCassini}
-            className={`btn justify-center text-[11px] py-1.5 ${
+            className={`btn justify-center text-sm py-1.5 ${
               trackSatellite ? 'btn-primary' : 'btn-secondary'
             }`}
           >
@@ -210,7 +210,7 @@ export function CassiniSouthPolePanel() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-line text-[11px]">
+        <div className="flex border-b border-line text-sm">
           <button
             type="button"
             onClick={() => setActiveTab('telemetry')}
@@ -235,11 +235,11 @@ export function CassiniSouthPolePanel() {
         {activeTab === 'telemetry' && (
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-fg text-[11px]">SOUTH POLAR CANDIDATES</span>
+              <span className="font-semibold text-fg text-sm">SOUTH POLAR CANDIDATES</span>
               <button
                 type="button"
                 onClick={handleAcquireScan}
-                className="text-[10px] text-cyan hover:underline flex items-center gap-1 font-mono"
+                className="text-xs text-cyan hover:underline flex items-center gap-1 font-mono"
               >
                 <Activity className="size-3" /> Refresh Scan
               </button>
@@ -252,7 +252,7 @@ export function CassiniSouthPolePanel() {
                   key={feature.id}
                   type="button"
                   onClick={() => selectSouthPoleFeature(feature)}
-                  className={`rounded px-2 py-0.5 font-mono text-[10px] transition ${
+                  className={`rounded px-2 py-0.5 font-mono text-xs transition ${
                     currentFeature.id === feature.id
                       ? 'bg-cyan text-bg font-semibold shadow-sm'
                       : 'bg-surface-raised text-fg-muted hover:bg-surface hover:text-fg'
@@ -268,7 +268,7 @@ export function CassiniSouthPolePanel() {
               <div className="flex items-start justify-between gap-1">
                 <div>
                   <h4 className="font-semibold text-fg text-xs">{currentFeature.name}</h4>
-                  <p className="font-mono text-[10px] text-cyan">
+                  <p className="font-mono text-xs text-cyan">
                     {formatLatitude(currentFeature.coordinates.latitude_deg)} ·{' '}
                     {formatLongitude(currentFeature.coordinates.longitude_deg)}
                   </p>
@@ -276,21 +276,21 @@ export function CassiniSouthPolePanel() {
                 <button
                   type="button"
                   onClick={() => handleFocusFeature(currentFeature)}
-                  className="rounded border border-line px-1.5 py-0.5 text-[10px] text-fg-muted hover:border-cyan hover:text-cyan flex items-center gap-1"
+                  className="rounded border border-line px-1.5 py-0.5 text-xs text-fg-muted hover:border-cyan hover:text-cyan flex items-center gap-1"
                   title="Center camera on this feature"
                 >
                   <Eye className="size-3" /> Focus
                 </button>
               </div>
 
-              <p className="text-[10px] text-fg-dim leading-relaxed">{currentFeature.scientificSignificance}</p>
+              <p className="text-xs text-fg-dim leading-relaxed">{currentFeature.scientificSignificance}</p>
 
               {/* Scientific Measurements Grid */}
-              <div className="grid grid-cols-2 gap-1.5 font-mono text-[10px] pt-1 border-t border-line">
+              <div className="grid grid-cols-2 gap-1.5 font-mono text-xs pt-1 border-t border-line">
                 <div className="rounded bg-surface p-1.5 flex items-center gap-1.5">
                   <Droplets className="size-3.5 text-blue-400 shrink-0" />
                   <div>
-                    <div className="text-[9px] text-fg-dim">Water-Ice</div>
+                    <div className="text-xs text-fg-dim">Water-Ice</div>
                     <div className="font-semibold text-fg">
                       {currentFeature.waterIceWtPercent} wt% ({currentFeature.waterIceProbability}%)
                     </div>
@@ -300,7 +300,7 @@ export function CassiniSouthPolePanel() {
                 <div className="rounded bg-surface p-1.5 flex items-center gap-1.5">
                   <Thermometer className="size-3.5 text-cyan shrink-0" />
                   <div>
-                    <div className="text-[9px] text-fg-dim">Temperature</div>
+                    <div className="text-xs text-fg-dim">Temperature</div>
                     <div className="font-semibold text-fg">
                       {currentFeature.temperatureK.min} - {currentFeature.temperatureK.max} K
                     </div>
@@ -310,7 +310,7 @@ export function CassiniSouthPolePanel() {
                 <div className="rounded bg-surface p-1.5 flex items-center gap-1.5">
                   <Sun className="size-3.5 text-amber-400 shrink-0" />
                   <div>
-                    <div className="text-[9px] text-fg-dim">Sunlight</div>
+                    <div className="text-xs text-fg-dim">Sunlight</div>
                     <div className="font-semibold text-fg">{currentFeature.solarIlluminationPercent}% peak</div>
                   </div>
                 </div>
@@ -318,7 +318,7 @@ export function CassiniSouthPolePanel() {
                 <div className="rounded bg-surface p-1.5 flex items-center gap-1.5">
                   <Gauge className="size-3.5 text-emerald-400 shrink-0" />
                   <div>
-                    <div className="text-[9px] text-fg-dim">Earth LOS</div>
+                    <div className="text-xs text-fg-dim">Earth LOS</div>
                     <div className="font-semibold text-fg">{currentFeature.earthVisibilityPercent}% window</div>
                   </div>
                 </div>
@@ -328,7 +328,7 @@ export function CassiniSouthPolePanel() {
               <button
                 type="button"
                 onClick={() => handleSetMissionTarget(currentFeature)}
-                className="w-full btn btn-primary justify-center text-[11px] py-1 mt-1"
+                className="w-full btn btn-primary justify-center text-sm py-1 mt-1"
               >
                 <CheckCircle2 className="size-3.5" />
                 {activeMissionSite?.coordinates.latitude_deg === currentFeature.coordinates.latitude_deg
@@ -343,9 +343,9 @@ export function CassiniSouthPolePanel() {
         {activeTab === 'instruments' && (
           <div className="space-y-3">
             <div>
-              <span className="font-semibold text-fg text-[11px]">DISPLAY & VISIBILITY</span>
+              <span className="font-semibold text-fg text-sm">DISPLAY & VISIBILITY</span>
               <div className="mt-1.5 space-y-1.5">
-                <label className="flex cursor-pointer items-center justify-between text-[11px]">
+                <label className="flex cursor-pointer items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
                     <Satellite className="size-3.5 text-cyan" /> Cassini 3D Model
                   </span>
@@ -357,7 +357,7 @@ export function CassiniSouthPolePanel() {
                   />
                 </label>
 
-                <label className="flex cursor-pointer items-center justify-between text-[11px]">
+                <label className="flex cursor-pointer items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
                     <Layers className="size-3.5 text-cyan" /> Orbital Path Loop
                   </span>
@@ -369,7 +369,7 @@ export function CassiniSouthPolePanel() {
                   />
                 </label>
 
-                <label className="flex cursor-pointer items-center justify-between text-[11px]">
+                <label className="flex cursor-pointer items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
                     <Activity className="size-3.5 text-cyan" /> South Pole Sensor Beam
                   </span>
@@ -385,7 +385,7 @@ export function CassiniSouthPolePanel() {
 
             {/* Orbit Simulation Speed */}
             <div className="border-t border-line pt-2">
-              <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center justify-between text-sm">
                 <span className="font-semibold text-fg">Orbit Simulation Speed</span>
                 <span className="font-mono text-cyan">{satelliteSpeed}x</span>
               </div>
@@ -395,7 +395,7 @@ export function CassiniSouthPolePanel() {
                     key={s}
                     type="button"
                     onClick={() => setSatelliteSpeed(s)}
-                    className={`flex-1 rounded py-1 font-mono text-[10px] transition ${
+                    className={`flex-1 rounded py-1 font-mono text-xs transition ${
                       satelliteSpeed === s
                         ? 'bg-cyan text-bg font-semibold'
                         : 'bg-surface-raised text-fg-dim hover:text-fg'
@@ -409,8 +409,8 @@ export function CassiniSouthPolePanel() {
 
             {/* Active Payload Instruments */}
             <div className="border-t border-line pt-2">
-              <span className="font-semibold text-fg text-[11px]">ACTIVE SENSING INSTRUMENTS</span>
-              <ul className="mt-1 space-y-1 text-[10px] font-mono text-fg-dim">
+              <span className="font-semibold text-fg text-sm">ACTIVE SENSING INSTRUMENTS</span>
+              <ul className="mt-1 space-y-1 text-xs font-mono text-fg-dim">
                 <li className="flex items-center gap-1.5">
                   <span className="size-1.5 rounded-full bg-emerald-400" />
                   <span>LOLA - Lunar Orbiter Laser Altimeter</span>
@@ -434,7 +434,7 @@ export function CassiniSouthPolePanel() {
 
         {/* Scan Message / Feedback notification */}
         {scanMessage && (
-          <div className="rounded border border-cyan/40 bg-cyan/10 px-2 py-1 text-[10px] text-cyan animate-fade-in font-mono">
+          <div className="rounded border border-cyan/40 bg-cyan/10 px-2 py-1 text-xs text-cyan animate-fade-in font-mono">
             {scanMessage}
           </div>
         )}

@@ -63,7 +63,7 @@ export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
       <div className="flex items-center gap-1.5 border-b md:border-b-0 md:border-r border-line pb-1.5 md:pb-0 md:pr-2">
         <button
           type="button"
-          className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-[11px] font-semibold transition ${
+          className={`flex items-center gap-1.5 rounded px-2.5 py-1 font-mono text-sm font-semibold transition ${
             isRealtime
               ? 'border border-cyan bg-cyan/20 text-cyan shadow-sm'
               : 'border border-line bg-surface-elevated/40 text-fg-muted hover:text-cyan'
@@ -77,7 +77,7 @@ export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
 
         <button
           type="button"
-          className={`rounded px-2 py-1 font-mono text-[11px] font-medium transition ${
+          className={`rounded px-2 py-1 font-mono text-sm font-medium transition ${
             !isRealtime
               ? 'border border-amber-400/80 bg-amber-400/15 text-amber-400'
               : 'text-fg-muted hover:text-fg'
@@ -119,7 +119,7 @@ export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
           </button>
           <button
             type="button"
-            className="btn-icon size-7 text-[10px] font-mono"
+            className="btn-icon size-7 text-xs font-mono"
             onClick={handleSetLive}
             title="Reset to Now"
           >
@@ -135,7 +135,7 @@ export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
           </button>
           <button
             type="button"
-            className="btn h-7 px-1.5 py-0 text-[10px] font-mono text-cyan"
+            className="btn h-7 px-1.5 py-0 text-xs font-mono text-cyan"
             onClick={() => handleOffsetDays(7)}
             title="Advance 1 Lunar Quarter (+7 Days)"
           >
@@ -156,7 +156,7 @@ export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
         </button>
 
         <select
-          className="field h-7 px-1 py-0 text-[11px] font-mono"
+          className="field h-7 px-1 py-0 text-sm font-mono"
           value={timeMultiplier}
           onChange={(e) => {
             setTimeMultiplier(Number(e.target.value));
@@ -174,7 +174,7 @@ export function AstronomicalTimeBar({ onClose }: { onClose?: () => void }) {
         {/* Lunar Phase Telemetry */}
         <div className="hidden lg:flex items-center gap-1.5 rounded bg-surface-elevated/60 px-2 py-0.5 border border-line/60">
           <Sparkles className="size-3 text-amber-400" />
-          <span className="font-mono text-[10px] text-fg">
+          <span className="font-mono text-xs text-fg">
             {astronomicalPhase.name} · {astronomicalPhase.percent}%
           </span>
         </div>

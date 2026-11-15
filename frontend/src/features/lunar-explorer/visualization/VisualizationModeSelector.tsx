@@ -18,7 +18,7 @@ export function VisualizationModeSelector() {
   return (
     <MissionPanel title="Visualization" icon={Globe} className="w-80">
       <div className="flex flex-col gap-2">
-        <p className="text-[11px] text-fg-muted">
+        <p className="text-sm text-fg-muted">
           Choose how to view the Moon, landing sites, the Sun and Earth.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
@@ -38,7 +38,7 @@ export function VisualizationModeSelector() {
               >
                 <Icon className={`size-5 shrink-0 ${active ? 'text-cyan' : 'text-fg-muted'}`} />
                 <span className="font-medium leading-tight">{label}</span>
-                <span className="text-[9px] leading-none">{description}</span>
+                <span className="text-xs leading-none">{description}</span>
               </button>
             );
           })}

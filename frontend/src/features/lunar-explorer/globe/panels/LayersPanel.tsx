@@ -119,7 +119,7 @@ export function LayersPanel({ sites }: { sites: LandingSite[] }) {
         </li>
       </ul>
       {southPoleMode ? (
-        <p className="mt-3 border-t border-line pt-2 text-[11px] text-fg-dim" data-testid="south-pole-note">
+        <p className="mt-3 border-t border-line pt-2 text-sm text-fg-dim" data-testid="south-pole-note">
           South polar region outlined poleward of 80°S. Cassini reconnaissance orbiter actively scanning polar cold traps.
         </p>
       ) : null}

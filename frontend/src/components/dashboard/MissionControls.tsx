@@ -68,10 +68,10 @@ export function MissionControls() {
               ))}
             </select>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] text-fg-dim">Quick Pick:</span>
+              <span className="text-sm text-fg-dim">Quick Pick:</span>
               <button
                 type="button"
-                className="rounded bg-surface-elevated/70 px-2 py-0.5 text-[11px] text-cyan hover:bg-cyan/15 border border-line transition"
+                className="rounded bg-surface-elevated/70 px-2 py-0.5 text-sm text-cyan hover:bg-cyan/15 border border-line transition"
                 onClick={() => {
                   const apollo = sites.data.sites.find((s) => s.id === 'apollo-11' || s.name.includes('Apollo 11'));
                   if (apollo) selectLandingSite(apollo);
@@ -82,7 +82,7 @@ export function MissionControls() {
               </button>
               <button
                 type="button"
-                className="rounded bg-surface-elevated/70 px-2 py-0.5 text-[11px] text-cyan hover:bg-cyan/15 border border-line transition"
+                className="rounded bg-surface-elevated/70 px-2 py-0.5 text-sm text-cyan hover:bg-cyan/15 border border-line transition"
                 onClick={() => {
                   const south = sites.data.sites.find((s) => s.id.includes('shackleton') || s.region === 'south-pole');
                   if (south) selectLandingSite(south);

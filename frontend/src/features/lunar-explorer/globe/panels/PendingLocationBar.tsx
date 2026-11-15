@@ -21,7 +21,7 @@ export function PendingLocationBar() {
           <MapPin className="size-4" />
         </div>
         <div className="min-w-0">
-          <p className="label text-[10px] uppercase tracking-wider text-cyan font-mono">
+          <p className="label text-xs uppercase tracking-wider text-cyan font-mono">
             Picked location · {classifyRegion(pending.latitude_deg, pending.longitude_deg).replace('-', ' ')}
           </p>
           <p className="font-mono text-sm font-semibold text-fg whitespace-nowrap">

@@ -52,13 +52,13 @@ const Marker = memo(function Marker({ marker, site, assets }: { marker: MarkerMo
         <Html position={[0, 0.07, 0]} center zIndexRange={[30, 0]} style={{ pointerEvents: 'none' }}>
           <div className="w-max max-w-[16rem] rounded border border-line-strong bg-bg/95 px-2.5 py-1.5 shadow-lg">
             <p className="text-xs font-semibold text-fg">{marker.name}</p>
-            <p className="font-mono text-[10px] text-fg-muted">
+            <p className="font-mono text-xs text-fg-muted">
               {formatLatitude(marker.latitude)} · {formatLongitude(marker.longitude)}
             </p>
-            <p className="mt-0.5 text-[10px]" style={{ color: marker.color }}>
+            <p className="mt-0.5 text-xs" style={{ color: marker.color }}>
               {CATEGORY_STYLE[marker.category].label}
             </p>
-            {PRECISION_NOTE[marker.precision] ? <p className="text-[10px] text-warning">{PRECISION_NOTE[marker.precision]}</p> : null}
+            {PRECISION_NOTE[marker.precision] ? <p className="text-xs text-warning">{PRECISION_NOTE[marker.precision]}</p> : null}
           </div>
         </Html>
       ) : null}
@@ -73,7 +73,7 @@ function PolarLabel({ marker }: { marker: MarkerModel }) {
   if (!southPoleMode || marker.latitude > -75 || !marker.selected) return null;
   return (
     <Html position={[0, 0.075, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-      <span className="whitespace-nowrap rounded bg-bg/70 px-1 font-mono text-[9px] text-fg-muted">{marker.name.replace(/ region$/, '')}</span>
+      <span className="whitespace-nowrap rounded bg-bg/70 px-1 font-mono text-xs text-fg-muted">{marker.name.replace(/ region$/, '')}</span>
     </Html>
   );
 }

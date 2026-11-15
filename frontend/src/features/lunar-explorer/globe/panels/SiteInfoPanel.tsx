@@ -19,7 +19,7 @@ export function SiteInfoPanel() {
       {site && style ? (
         <div data-testid="site-info">
           <p className="text-sm font-semibold">{site.name}</p>
-          <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wider" style={{ color: style.color }}>
+          <p className="mt-0.5 text-sm font-semibold uppercase tracking-wider" style={{ color: style.color }}>
             {style.label}
           </p>
           <dl className="mt-2">
@@ -32,10 +32,10 @@ export function SiteInfoPanel() {
               {site.provenance}
             </DataRow>
           </dl>
-          {note ? <p className="mt-2 rounded border border-warning/40 bg-warning/10 px-2 py-1.5 text-[11px] text-warning">{note}</p> : null}
+          {note ? <p className="mt-2 rounded border border-warning/40 bg-warning/10 px-2 py-1.5 text-sm text-warning">{note}</p> : null}
           <p className="mt-2 text-xs text-fg-muted">{site.description}</p>
-          {site.notes ? <p className="mt-1 text-[11px] text-fg-dim">{site.notes}</p> : null}
-          <p className="mt-3 border-t border-line pt-2 text-[11px] text-fg-dim" data-testid="analysis-ready">
+          {site.notes ? <p className="mt-1 text-sm text-fg-dim">{site.notes}</p> : null}
+          <p className="mt-3 border-t border-line pt-2 text-sm text-fg-dim" data-testid="analysis-ready">
             Stored for analysis: {coords ? `${coords.latitude_deg.toFixed(4)}°, ${coords.longitude_deg.toFixed(4)}°` : '—'} ·{' '}
             <Link to="/solar" className="text-cyan hover:underline">
               Solar

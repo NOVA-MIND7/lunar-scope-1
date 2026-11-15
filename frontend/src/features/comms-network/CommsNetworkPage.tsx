@@ -403,7 +403,7 @@ export default function CommsNetworkPage() {
           </button>
 
           {/* Speed Pills */}
-          <div className="flex items-center gap-1 rounded border border-line bg-bg/80 p-0.5 font-mono text-[11px]">
+          <div className="flex items-center gap-1 rounded border border-line bg-bg/80 p-0.5 font-mono text-sm">
             <span className="px-1.5 text-fg-dim">Speed:</span>
             {[0.5, 1, 2, 5].map((spd) => (
               <button
@@ -439,7 +439,7 @@ export default function CommsNetworkPage() {
               key={key}
               type="button"
               onClick={() => setCameraFocus((prev) => ({ id: prev.id + 1, target: key }))}
-              className={`rounded border px-2.5 py-1 text-[11px] font-medium transition cursor-pointer ${
+              className={`rounded border px-2.5 py-1 text-sm font-medium transition cursor-pointer ${
                 cameraFocus.target === key && cameraFocus.id > 0
                   ? 'border-cyan/60 bg-cyan/15 text-cyan'
                   : 'border-line bg-bg/70 text-fg-muted hover:text-fg'
@@ -452,7 +452,7 @@ export default function CommsNetworkPage() {
           <button
             type="button"
             onClick={() => setShowLabels((s) => !s)}
-            className="inline-flex items-center gap-1 rounded border border-line bg-bg/70 px-2.5 py-1 text-[11px] text-fg-muted hover:text-fg cursor-pointer"
+            className="inline-flex items-center gap-1 rounded border border-line bg-bg/70 px-2.5 py-1 text-sm text-fg-muted hover:text-fg cursor-pointer"
           >
             {showLabels ? <Eye className="size-3" /> : <EyeOff className="size-3" />}
             Labels
@@ -488,13 +488,13 @@ export default function CommsNetworkPage() {
                 {frame.linkUp ? <Wifi className="mr-1 size-3" /> : <WifiOff className="mr-1 size-3" />}
                 {frame.linkStateLabel}
               </span>
-              <span className="rounded border border-line-strong bg-bg/85 px-2 py-0.5 font-mono text-[11px] text-fg-muted backdrop-blur">
+              <span className="rounded border border-line-strong bg-bg/85 px-2 py-0.5 font-mono text-sm text-fg-muted backdrop-blur">
                 {BAND_SPECS[config.band].label} • {frame.effectiveRateMbps} Mbps • Delay {frame.totalDelaySec}s
               </span>
             </div>
 
             {/* Legend Overlay */}
-            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-3 rounded border border-line bg-bg/85 px-3 py-1.5 font-mono text-[10px] text-fg-muted backdrop-blur">
+            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap items-center gap-3 rounded border border-line bg-bg/85 px-3 py-1.5 font-mono text-xs text-fg-muted backdrop-blur">
               <span className="flex items-center gap-1">
                 <span className="inline-block size-2 rounded-full bg-success" /> Rover Up-Link
               </span>
@@ -522,11 +522,11 @@ export default function CommsNetworkPage() {
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] sm:items-center">
               {/* Node 1: Moon Rover */}
               <div className="min-w-0 rounded border border-success/50 bg-success/10 p-2.5">
-                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-success">
+                <div className="flex items-center gap-1 text-xs font-semibold uppercase text-success">
                   <Compass className="size-3" /> Moon Rover
                 </div>
                 <div className="mt-0.5 truncate font-mono text-xs font-bold text-fg">{config.roverName}</div>
-                <div className="font-mono text-[10px] text-fg-muted">
+                <div className="font-mono text-xs text-fg-muted">
                   {config.roverLat.toFixed(1)}°, {config.roverLon.toFixed(1)}° • {config.txPowerWatts}W
                 </div>
               </div>
@@ -543,13 +543,13 @@ export default function CommsNetworkPage() {
                     : 'border-line bg-bg/60 opacity-65'
                 }`}
               >
-                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-cyan">
+                <div className="flex items-center gap-1 text-xs font-semibold uppercase text-cyan">
                   <Satellite className="size-3" /> Lunar Sat
                 </div>
                 <div className="mt-0.5 truncate font-mono text-xs font-bold text-fg">
                   {activeLunarSat ? activeLunarSat.label : config.routingMode === 'DIRECT_TO_EARTH' ? 'Bypassed (DTE)' : 'No Relay Active'}
                 </div>
-                <div className="font-mono text-[10px] text-fg-muted">
+                <div className="font-mono text-xs text-fg-muted">
                   {roverToLunarHop && activeLunarSat
                     ? `${roverToLunarHop.distanceKm.toLocaleString()} km • ${roverToLunarHop.latencyMs}ms`
                     : `${config.lunarSatCount} deployed`}
@@ -568,7 +568,7 @@ export default function CommsNetworkPage() {
                     : 'border-line bg-bg/60 opacity-65'
                 }`}
               >
-                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-blue">
+                <div className="flex items-center gap-1 text-xs font-semibold uppercase text-blue">
                   <Globe2 className="size-3" /> Earth Sat
                 </div>
                 <div className="mt-0.5 truncate font-mono text-xs font-bold text-fg">
@@ -578,7 +578,7 @@ export default function CommsNetworkPage() {
                       ? 'Active'
                       : 'Direct Downlink'}
                 </div>
-                <div className="font-mono text-[10px] text-fg-muted">
+                <div className="font-mono text-xs text-fg-muted">
                   {config.earthSatCount > 0 ? `${config.earthSatCount} in orbit` : '0 Earth sats'}
                 </div>
               </div>
@@ -595,13 +595,13 @@ export default function CommsNetworkPage() {
                     : 'border-danger/40 bg-danger/10 opacity-75'
                 }`}
               >
-                <div className="flex items-center gap-1 text-[10px] font-semibold uppercase text-warning">
+                <div className="flex items-center gap-1 text-xs font-semibold uppercase text-warning">
                   <Signal className="size-3" /> Base Dish
                 </div>
                 <div className="mt-0.5 truncate font-mono text-xs font-bold text-fg">
                   {activeDish ? activeDish.label : 'Waiting for LOS'}
                 </div>
-                <div className="font-mono text-[10px] text-fg-muted">
+                <div className="font-mono text-xs text-fg-muted">
                   {frame.dsnDishes.length} DSN stations online
                 </div>
               </div>
@@ -652,7 +652,7 @@ export default function CommsNetworkPage() {
             <h2 className="text-sm font-semibold text-fg">Custom Network Parameters</h2>
 
             {/* 3 Tabs: Rover & Signal | Satellites | Base Dishes */}
-            <div className="grid grid-cols-3 gap-1 rounded border border-line bg-bg/70 p-1 text-[11px] font-semibold">
+            <div className="grid grid-cols-3 gap-1 rounded border border-line bg-bg/70 p-1 text-sm font-semibold">
               {(
                 [
                   ['rover', 'Rover & Band'],
@@ -775,7 +775,7 @@ export default function CommsNetworkPage() {
                         key={b}
                         type="button"
                         onClick={() => setConfig((p) => ({ ...p, band: b }))}
-                        className={`rounded border py-1.5 font-mono text-[11px] transition cursor-pointer ${
+                        className={`rounded border py-1.5 font-mono text-sm transition cursor-pointer ${
                           config.band === b
                             ? 'border-cyan bg-cyan/20 text-cyan font-bold'
                             : 'border-line bg-bg/70 text-fg-muted hover:text-fg'
@@ -911,7 +911,7 @@ export default function CommsNetworkPage() {
                     >
                       <div>
                         <span className="font-medium text-fg">{meta.name}</span>
-                        <span className="ml-2 font-mono text-[10px] text-fg-muted">
+                        <span className="ml-2 font-mono text-xs text-fg-muted">
                           ({meta.lat.toFixed(1)}°, {meta.lon.toFixed(1)}°)
                         </span>
                       </div>
@@ -996,19 +996,19 @@ export default function CommsNetworkPage() {
 
             <div className="grid grid-cols-2 gap-2 font-mono text-xs sm:grid-cols-4">
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">SIGNAL DELAY</div>
+                <div className="text-xs text-fg-dim">SIGNAL DELAY</div>
                 <div className="mt-0.5 text-sm font-bold text-cyan">{frame.totalDelaySec} s</div>
               </div>
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">THROUGHPUT</div>
+                <div className="text-xs text-fg-dim">THROUGHPUT</div>
                 <div className="mt-0.5 text-sm font-bold text-success">{frame.effectiveRateMbps} Mbps</div>
               </div>
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">MIN SNR</div>
+                <div className="text-xs text-fg-dim">MIN SNR</div>
                 <div className="mt-0.5 text-sm font-bold text-warning">{frame.minSnrDb} dB</div>
               </div>
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   {isComplete ? 'TIME TAKEN' : elapsedTotalSec > 0 ? 'ELAPSED / EST. FULL' : 'EST. FULL DELIVERY'}
                 </div>
                 <div className="mt-0.5 text-sm font-bold text-fg">
@@ -1020,7 +1020,7 @@ export default function CommsNetworkPage() {
                         ? formatMissionHours(orbitalPlan.missionTotalHours)
                         : 'Blocked'}
                 </div>
-                <div className="text-[9px] text-fg-dim">
+                <div className="text-xs text-fg-dim">
                   {isComplete
                     ? `Active TX ${activeTxSec.toFixed(1)}s • ${completedUtcStr ?? orbitalPlan.steadyArrivalUtc}`
                     : orbitalPlan.missionTotalHours !== null
@@ -1031,7 +1031,7 @@ export default function CommsNetworkPage() {
             </div>
 
             {frame.activeHops.length > 0 && (
-              <div className="space-y-1 font-mono text-[11px]">
+              <div className="space-y-1 font-mono text-sm">
                 {frame.activeHops.map((h, i) => (
                   <div
                     key={h.id}
@@ -1048,7 +1048,7 @@ export default function CommsNetworkPage() {
               </div>
             )}
 
-            <div className="max-h-32 space-y-1 overflow-y-auto rounded border border-line bg-bg/70 p-2 font-mono text-[10px] text-fg-muted">
+            <div className="max-h-32 space-y-1 overflow-y-auto rounded border border-line bg-bg/70 p-2 font-mono text-xs text-fg-muted">
               {eventLog.map((entry, idx) => (
                 <div key={`${idx}-${entry.slice(0, 12)}`}>{entry}</div>
               ))}

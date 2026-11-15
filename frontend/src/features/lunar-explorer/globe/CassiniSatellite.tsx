@@ -325,7 +325,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
         {showTelemetryLabels && (hoveredSat === 'cassini' || selectedSatelliteId === 'cassini') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-cyan/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
-              <span className="font-mono text-[9px] font-semibold text-cyan">🛰️ CASSINI · POLAR ORBIT</span>
+              <span className="font-mono text-xs font-semibold text-cyan">🛰️ CASSINI · POLAR ORBIT</span>
             </div>
           </Html>
         ) : null}
@@ -353,7 +353,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
         {showTelemetryLabels && (hoveredSat === 'lro' || selectedSatelliteId === 'lro') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-emerald-400/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
-              <span className="font-mono text-[9px] font-semibold text-emerald-400">🛰️ LRO · INCLINED ORBIT</span>
+              <span className="font-mono text-xs font-semibold text-emerald-400">🛰️ LRO · INCLINED ORBIT</span>
             </div>
           </Html>
         ) : null}
@@ -381,7 +381,7 @@ export const CassiniSatellite = memo(function CassiniSatellite() {
         {showTelemetryLabels && (hoveredSat === 'gateway' || selectedSatelliteId === 'gateway') ? (
           <Html position={[0, 0.08, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[40, 0]}>
             <div className="flex flex-col items-center whitespace-nowrap rounded border border-amber-400/70 bg-bg/95 px-2 py-0.5 shadow-lg backdrop-blur">
-              <span className="font-mono text-[9px] font-semibold text-amber-400">🛰️ GATEWAY · HALO ORBIT</span>
+              <span className="font-mono text-xs font-semibold text-amber-400">🛰️ GATEWAY · HALO ORBIT</span>
             </div>
           </Html>
         ) : null}

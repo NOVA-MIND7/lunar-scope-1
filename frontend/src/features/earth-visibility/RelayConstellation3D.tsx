@@ -56,7 +56,7 @@ function Model({ url, size, label, base = false, rotation, small = false }:
   return <>
     <primitive object={fitted} />
     {label && <Html distanceFactor={8} center style={{ pointerEvents: 'none' }}>
-      <span className={`whitespace-nowrap rounded bg-slate-950/80 px-1.5 py-0.5 text-white ${small ? 'text-[8px]' : 'text-[10px]'}`}>{label}</span>
+      <span className={`whitespace-nowrap rounded bg-slate-950/80 px-1.5 py-0.5 text-white ${small ? 'text-[8px]' : 'text-xs'}`}>{label}</span>
     </Html>}
   </>;
 }

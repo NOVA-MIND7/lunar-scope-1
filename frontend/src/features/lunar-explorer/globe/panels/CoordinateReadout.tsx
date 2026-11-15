@@ -26,7 +26,7 @@ export function CoordinateReadout({ compact = false }: { compact?: boolean }) {
   const altitudeKm = Math.max(0, (camera.distance - 1) * MEAN_LUNAR_RADIUS_KM);
 
   return (
-    <dl className="pointer-events-auto w-max max-w-[min(100%,20rem)] rounded border border-line-strong bg-bg/80 px-3 py-2 font-mono text-[11px] backdrop-blur-md" data-testid="coordinate-readout">
+    <dl className="pointer-events-auto w-max max-w-[min(100%,20rem)] rounded border border-line-strong bg-bg/80 px-3 py-2 font-mono text-sm backdrop-blur-md" data-testid="coordinate-readout">
       <Row label="CURSOR">{cursor ? fmt(cursor) : <span className="text-fg-dim">move over the Moon</span>}</Row>
       <Row label="PICKED">{pending ? <span data-testid="picked-coordinates">{fmt(pending)}</span> : '—'}</Row>
       <Row label="SITE">{site ? `${site.name}` : 'None selected'}</Row>

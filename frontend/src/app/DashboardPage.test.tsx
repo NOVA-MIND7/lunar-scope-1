@@ -27,9 +27,20 @@ function renderDashboard() {
   return render(<QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider>);
 }
 
+async function showDetails(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: /Show details/i }));
+}
+
+async function openMissionSetup(user: ReturnType<typeof userEvent.setup>) {
+  const btn = await screen.findByRole('button', { name: /Mission setup/i, expanded: false });
+  await user.click(btn);
+}
+
 describe('Mission Control dashboard', () => {
-  it('shows the four required metric cards with computed values', async () => {
+  it('shows the four required metric cards with computed values when details are shown', async () => {
+    const user = userEvent.setup();
     renderDashboard();
+    await showDetails(user);
     const cards = await screen.findAllByTestId('metric-card');
     expect(cards.map((c) => c.getAttribute('aria-label'))).toEqual([
       'Solar elevation', 'Earth elevation', 'Sunlight duration', 'Earth visibility',
@@ -42,17 +53,21 @@ describe('Mission Control dashboard', () => {
   it('shows empty states for conditions until a site is selected, then updates from state', async () => {
     const user = userEvent.setup();
     renderDashboard();
+    await openMissionSetup(user);
     expect(await screen.findAllByText('No landing site selected')).toHaveLength(2);
     await user.selectOptions(await screen.findByLabelText('Landing site'), 'shackleton-rim');
     expect(screen.queryByText('No landing site selected')).not.toBeInTheDocument();
     expect(screen.getByTestId('topbar-location')).toHaveTextContent('Shackleton Crater Rim');
     expect(screen.getByTestId('coordinate-readout')).toHaveTextContent('Shackleton Crater Rim');
+    await showDetails(user);
     expect(screen.getAllByTestId('metric-card')[0]).toHaveTextContent('Shackleton Crater Rim');
     expect(useAppStore.getState().selectedCoordinates).toEqual({ latitude_deg: -89.9, longitude_deg: 0 });
   });
 
   it('updates the mission date and duration in state and the timeline', async () => {
+    const user = userEvent.setup();
     renderDashboard();
+    await openMissionSetup(user);
     const dateInput = await screen.findByLabelText('Date (UTC)');
     const { fireEvent } = await import('@testing-library/react');
     fireEvent.change(dateInput, { target: { value: '2028-03-10' } });
@@ -65,7 +80,7 @@ describe('Mission Control dashboard', () => {
   it('timeline shows no data by default and labelled DEMO DATA only when toggled', async () => {
     const user = userEvent.setup();
     renderDashboard();
-    await screen.findAllByTestId('metric-card');
+    await openMissionSetup(user);
     expect(screen.queryAllByTestId('demo-segment')).toHaveLength(0);
     await user.click(screen.getByRole('switch'));
     expect(screen.getAllByTestId('demo-segment').length).toBeGreaterThan(0);

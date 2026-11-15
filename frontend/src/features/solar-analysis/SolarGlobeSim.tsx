@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Html, Line, OrbitControls, Stars, useGLTF } from '@react-three/drei';
+import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Compass, Eye, Globe2, Mountain, RotateCcw, Sun } from 'lucide-react';
@@ -30,8 +30,6 @@ type CameraFocusPreset = {
   position: [number, number, number];
 };
 
-const MOON_MODEL_SCALE = 1 / 1.2718640565872192;
-
 function MoonGlbModel({
   onPointerDown,
   onClick,
@@ -43,35 +41,51 @@ function MoonGlbModel({
   onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
   onPointerOut: () => void;
 }) {
-  const modelUrl = `${import.meta.env.BASE_URL}models/moon.glb`.replace(/\/+/g, '/');
-  const gltf = useGLTF(modelUrl);
-  const sceneClone = useMemo(() => {
-    const clone = gltf.scene.clone(true);
-    clone.traverse((child) => {
-      const mesh = child as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        const mat = mesh.material as THREE.MeshStandardMaterial | undefined;
-        if (mat) {
-          mat.roughness = 0.92;
-          mat.metalness = 0.04;
-          mat.needsUpdate = true;
-        }
-      }
+  const [wacTex, setWacTex] = useState<THREE.Texture | null>(null);
+  const [shadeTex, setShadeTex] = useState<THREE.Texture | null>(null);
+  const maxAnisotropy = useThree((s) => s.gl.capabilities.getMaxAnisotropy());
+
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    const base = import.meta.env.BASE_URL || '/';
+    const mkUrl = (name: string) => `${base}textures/${name}`.replace(/\/+/g, '/');
+    loader.load(mkUrl('moon_trek_wac.jpg'), (t) => {
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = maxAnisotropy;
+      setWacTex(t);
     });
-    return clone;
-  }, [gltf.scene]);
+    loader.load(mkUrl('moon_trek_lola_shade.jpg'), (t) => {
+      t.colorSpace = THREE.NoColorSpace;
+      t.anisotropy = maxAnisotropy;
+      setShadeTex(t);
+    });
+  }, [maxAnisotropy]);
+
+  const dispScale = shadeTex ? 0.032 * 1.5 : 0;
 
   return (
-    <primitive
-      object={sceneClone}
-      scale={MOON_MODEL_SCALE}
+    <mesh
       onPointerDown={onPointerDown}
       onClick={onClick}
       onPointerMove={onPointerMove}
       onPointerOut={onPointerOut}
-    />
+    >
+      <sphereGeometry args={[1, 160, 120]} />
+      {wacTex ? (
+        <meshStandardMaterial
+          map={wacTex}
+          bumpMap={shadeTex ?? undefined}
+          bumpScale={0.038 * 1.5}
+          displacementMap={shadeTex ?? undefined}
+          displacementScale={dispScale}
+          displacementBias={-dispScale * 0.5}
+          roughness={0.9}
+          metalness={0.05}
+        />
+      ) : (
+        <meshStandardMaterial color="#475569" roughness={0.9} />
+      )}
+    </mesh>
   );
 }
 
@@ -105,7 +119,7 @@ function FrontLabel({
     <Html position={position} center zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
       <div
         ref={ref}
-        className={`whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wider shadow transition-opacity ${className}`}
+        className={`whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-xs font-semibold tracking-wider shadow transition-opacity ${className}`}
       >
         {children}
       </div>
@@ -498,7 +512,7 @@ export function SolarGlobeSim({
         </div>
 
         {viewMode === 'ORBITAL' && (
-          <span className="font-mono text-[11px] text-fg-muted">
+          <span className="font-mono text-sm text-fg-muted">
             Click Moon surface or preset pin to select site
           </span>
         )}
@@ -532,19 +546,19 @@ export function SolarGlobeSim({
 
         {/* Top-left Live Cursor & Sub-Solar Telemetry HUD */}
         <div className="pointer-events-none absolute top-3 left-3 flex flex-col gap-1.5">
-          <div className="rounded border border-line-strong bg-bg/85 px-2.5 py-1.5 font-mono text-[11px] backdrop-blur">
+          <div className="rounded border border-line-strong bg-bg/85 px-2.5 py-1.5 font-mono text-sm backdrop-blur">
             <span className="text-warning flex items-center gap-1.5">
               <Sun className="size-3.5" />
               Sub-Solar: {point.subSolarLatDeg.toFixed(2)}°, {point.subSolarLonDeg.toFixed(1)}°
             </span>
           </div>
           {hoverCoords && viewMode === 'ORBITAL' && (
-            <div className="rounded border border-cyan/50 bg-bg/85 px-2.5 py-1 font-mono text-[11px] text-cyan backdrop-blur">
+            <div className="rounded border border-cyan/50 bg-bg/85 px-2.5 py-1 font-mono text-sm text-cyan backdrop-blur">
               Cursor: {hoverCoords.lat.toFixed(2)}°, {hoverCoords.lon.toFixed(2)}° (click to set site)
             </div>
           )}
           {viewMode !== 'ORBITAL' && (
-            <div className="rounded border border-line-strong bg-bg/85 px-2.5 py-1 font-mono text-[11px] text-fg-muted backdrop-blur">
+            <div className="rounded border border-line-strong bg-bg/85 px-2.5 py-1 font-mono text-sm text-fg-muted backdrop-blur">
               3D Terrain Shadows • {useTerrainHorizon ? 'LOLA Horizon Mask Active' : 'Flat 0° Horizon'}
             </div>
           )}
@@ -559,14 +573,14 @@ export function SolarGlobeSim({
                 onClick={() =>
                   setFocusPreset((p) => ({ id: (p?.id ?? 0) + 1, position: [0.4, -2.5, 1.4] }))
                 }
-                className="btn py-1 px-2 text-[11px]"
+                className="btn py-1 px-2 text-sm"
               >
                 <Compass className="size-3" /> South Pole
               </button>
               <button
                 type="button"
                 onClick={() => focusOnSite(site)}
-                className="btn py-1 px-2 text-[11px] border-cyan/50 text-cyan"
+                className="btn py-1 px-2 text-sm border-cyan/50 text-cyan"
               >
                 <Eye className="size-3" /> Focus Site
               </button>
@@ -575,12 +589,12 @@ export function SolarGlobeSim({
                 onClick={() =>
                   setFocusPreset((p) => ({ id: (p?.id ?? 0) + 1, position: [0, 0.3, 3.0] }))
                 }
-                className="btn py-1 px-2 text-[11px]"
+                className="btn py-1 px-2 text-sm"
               >
                 <RotateCcw className="size-3" /> Reset
               </button>
             </div>
-            <div className="rounded border border-line bg-bg/80 px-2 py-1 font-mono text-[10px] text-fg-muted">
+            <div className="rounded border border-line bg-bg/80 px-2 py-1 font-mono text-xs text-fg-muted">
               Drag: Rotate • Scroll: Zoom • Click Moon/Pins: Select Site
             </div>
           </div>

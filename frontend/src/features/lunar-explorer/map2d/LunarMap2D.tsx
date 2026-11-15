@@ -1,4 +1,4 @@
-ï»¿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Crosshair, Globe, Sun } from 'lucide-react';
 import { MissionPanel } from '@/components/common/MissionPanel';
 import { formatLatitude, formatLongitude } from '@/utils/format';
@@ -8,7 +8,7 @@ import { useGlobeStore } from '../globe/globeStore';
 
 const MAP_WIDTH = 720;
 const MAP_HEIGHT = 360;
-const MOON_TEXTURE = `${import.meta.env.BASE_URL}textures/moon_small_diffuse.png`.replace(/\/+/g, '/');
+const MOON_TEXTURE = `${import.meta.env.BASE_URL}textures/moon_trek_wac.jpg`.replace(/\/+/g, '/');
 
 /** Equirectangular 2D map of the Moon with site picking and illustrative day/night. */
 export function LunarMap2D() {
@@ -42,7 +42,7 @@ export function LunarMap2D() {
   if (sitesQuery.isPending) {
     return (
       <MissionPanel title="2D Lunar Map" icon={Globe}>
-        <div className="flex h-full items-center justify-center text-fg-muted">Loading surface dataâ€¦</div>
+        <div className="flex h-full items-center justify-center text-fg-muted">Loading surface data…</div>
       </MissionPanel>
     );
   }
@@ -50,10 +50,10 @@ export function LunarMap2D() {
   return (
     <MissionPanel title="2D Lunar Map" icon={Globe} className="h-full flex flex-col">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-line bg-bg/50 text-xs text-fg-muted">
-        <span>Equirectangular projection Â· {sites.length} sites Â· illustrative terminator</span>
+        <span>Equirectangular projection · {sites.length} sites · illustrative terminator</span>
         <div className="flex gap-1">
           <button type="button" onClick={() => setVisualizationMode('globe')} className={`btn btn-sm ${visualizationMode === 'globe' ? 'btn-primary' : 'btn-outline'}`} title="3D Globe"><Globe className="size-3.5" /></button>
-          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className={`btn btn-sm ${visualizationMode === 'solarsystem' ? 'btn-primary' : 'btn-outline'}`} title="Sunâ€“Earthâ€“Moon system"><Sun className="size-3.5" /></button>
+          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className={`btn btn-sm ${visualizationMode === 'solarsystem' ? 'btn-primary' : 'btn-outline'}`} title="Sun–Earth–Moon system"><Sun className="size-3.5" /></button>
         </div>
       </div>
       <div className="flex-1 relative overflow-hidden bg-[#0b0f1a] border border-line rounded-lg">
@@ -101,15 +101,15 @@ export function LunarMap2D() {
             </g>
           )}
         </svg>
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-bg/90 backdrop-blur px-3 py-2 text-[11px] text-fg shadow-lg">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-bg/90 backdrop-blur px-3 py-2 text-sm text-fg shadow-lg">
           <span className="font-mono text-fg-muted">{pending ? `Picked: ${formatLatitude(pending.latitude_deg)}, ${formatLongitude(pending.longitude_deg)}` : 'Click map to pick location'}</span>
           <button type="button" onClick={() => confirmPending()} disabled={!pending} className={`btn btn-sm ${pending ? 'btn-primary' : 'btn-disabled'}`} title={pending ? 'Confirm this location as landing site' : 'Pick a location first'}>
             <Crosshair className="size-3.5" aria-hidden /> {pending ? 'Confirm site' : 'Pick site'}
           </button>
           <button type="button" onClick={() => setVisualizationMode('globe')} className="btn btn-sm btn-outline" title="Open 3D Globe"><Globe className="size-3.5" aria-hidden /> 3D Globe</button>
-          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className="btn btn-sm btn-outline" title="Sunâ€“Earthâ€“Moon spatial view"><Sun className="size-3.5" aria-hidden /> System view</button>
+          <button type="button" onClick={() => setVisualizationMode('solarsystem')} className="btn btn-sm btn-outline" title="Sun–Earth–Moon spatial view"><Sun className="size-3.5" aria-hidden /> System view</button>
         </div>
-        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1 p-2 rounded-lg border border-line bg-bg/90 backdrop-blur text-[10px] text-fg-muted shadow-lg">
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1 p-2 rounded-lg border border-line bg-bg/90 backdrop-blur text-xs text-fg-muted shadow-lg">
           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#22d3ee]" aria-hidden /><span>Landing site</span></div>
           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#B388FF]" aria-hidden /><span>Custom location</span></div>
           <div className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-[#F4F7FC] border border-white" aria-hidden /><span>Pending pick</span></div>

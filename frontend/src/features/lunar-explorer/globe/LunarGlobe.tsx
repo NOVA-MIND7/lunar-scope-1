@@ -46,12 +46,12 @@ function QuickNavHelper() {
   const setPending = useGlobeStore((s) => s.setPending);
 
   return (
-    <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-bg/90 px-3 py-1 shadow-xl backdrop-blur-md text-[11px] whitespace-nowrap">
-      <span className="hidden 2xl:inline text-fg-dim font-mono text-[10px]">
+    <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-bg/90 px-3 py-1 shadow-xl backdrop-blur-md text-sm whitespace-nowrap">
+      <span className="hidden 2xl:inline text-fg-dim font-mono text-xs">
         🖱️ Rotate: Drag &nbsp;|&nbsp; 🔄 Zoom: Scroll &nbsp;|&nbsp; 📍 Click: Pick
       </span>
       <div className="hidden 2xl:inline h-3 w-px bg-line" />
-      <span className="text-fg-muted font-medium text-[10px]">Quick Jump:</span>
+      <span className="text-fg-muted font-medium text-xs">Quick Jump:</span>
       <button
         type="button"
         className="rounded px-2 py-0.5 font-medium text-cyan hover:bg-cyan/15 transition cursor-pointer"
@@ -285,7 +285,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
           <span className="hidden sm:inline">
             {timeTrackingMode === 'realtime' ? '● LIVE' : 'TIME'}
           </span>
-          <span className="text-[11px] text-fg-dim font-normal">
+          <span className="text-sm text-fg-dim font-normal">
             {new Date(activeTimestampMs).toISOString().slice(0, 16).replace('T', ' ')} UTC
           </span>
         </button>

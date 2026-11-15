@@ -168,21 +168,21 @@ export default function MissionTimelinePage() {
                   <div className="font-mono text-xl font-bold text-amber-400">
                     {Math.round(timeline.sunlit_fraction * 100)}%
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-fg-muted">Sunlight Share</div>
+                  <div className="text-xs uppercase tracking-wider text-fg-muted">Sunlight Share</div>
                 </div>
 
                 <div className="rounded border border-blue-400/30 bg-blue-400/10 p-2.5">
                   <div className="font-mono text-xl font-bold text-blue-400">
                     {Math.round(timeline.earth_visible_fraction * 100)}%
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-fg-muted">Earth Visibility</div>
+                  <div className="text-xs uppercase tracking-wider text-fg-muted">Earth Visibility</div>
                 </div>
 
                 <div className="rounded border border-line bg-surface-elevated/40 p-2.5">
                   <div className="font-mono text-xl font-bold text-fg">
                     {timeline.longest_darkness_hours}h
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-fg-muted">Max Darkness</div>
+                  <div className="text-xs uppercase tracking-wider text-fg-muted">Max Darkness</div>
                 </div>
               </div>
 
@@ -222,11 +222,11 @@ export default function MissionTimelinePage() {
                     <span className="font-semibold text-fg">
                       {idx + 1}. {phase.name}
                     </span>
-                    <span className="font-mono text-[10px] text-cyan">
+                    <span className="font-mono text-xs text-cyan">
                       {formatUtcMonthDay(phase.start_utc)} ▸ {formatUtcMonthDay(phase.end_utc)}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[11px] text-fg-dim">{phase.description}</p>
+                  <p className="mt-0.5 text-sm text-fg-dim">{phase.description}</p>
                 </div>
               ))}
             </div>
@@ -251,7 +251,7 @@ export default function MissionTimelinePage() {
           <div className="grid grid-cols-[6.5rem_1fr] items-center gap-3 sm:grid-cols-[9rem_1fr]">
             <span className="text-xs font-medium text-fg">Mission Window</span>
             <div className="relative h-6 rounded border border-cyan/60 bg-cyan/15 flex items-center px-3">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan">
+              <span className="font-mono text-xs font-bold uppercase tracking-wider text-cyan">
                 Landing ▸ {pluralDays(duration)} Nominal Mission
               </span>
             </div>
@@ -333,7 +333,7 @@ export default function MissionTimelinePage() {
                   }}
                 >
                   <span className="h-1.5 w-px bg-line-strong" />
-                  <span className="whitespace-nowrap font-mono text-[10px] text-fg-muted">{t.label}</span>
+                  <span className="whitespace-nowrap font-mono text-xs text-fg-muted">{t.label}</span>
                 </span>
               ))}
             </div>
@@ -377,7 +377,7 @@ export default function MissionTimelinePage() {
                       <span className="font-mono text-xs font-bold text-fg">
                         Window #{idx + 1}
                       </span>
-                      <span className="rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] text-cyan">
+                      <span className="rounded bg-surface px-1.5 py-0.5 font-mono text-xs text-cyan">
                         {pluralDays(duration)}
                       </span>
                     </div>

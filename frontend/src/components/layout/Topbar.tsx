@@ -74,7 +74,7 @@ export function Topbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3 md:gap-4">
-        <div className="hidden sm:flex items-center rounded border border-line bg-bg/60 p-0.5 text-[11px]" role="group" aria-label="UI mode">
+        <div className="hidden sm:flex items-center rounded border border-line bg-bg/60 p-0.5 text-sm" role="group" aria-label="UI mode">
           <button
             type="button"
             onClick={() => setUIMode('basic')}
@@ -95,9 +95,9 @@ export function Topbar() {
 
         <div className="text-right leading-tight" title="Coordinated Universal Time (current wall clock)">
           <p className="font-mono text-sm tabular-nums text-fg" data-testid="utc-clock">
-            {time} <span className="text-[10px] text-cyan">UTC</span>
+            {time} <span className="text-xs text-cyan">UTC</span>
           </p>
-          <p className="hidden font-mono text-[10px] text-fg-muted sm:block">{date}</p>
+          <p className="hidden font-mono text-xs text-fg-muted sm:block">{date}</p>
         </div>
 
         <div className="hidden items-center gap-3 sm:flex">

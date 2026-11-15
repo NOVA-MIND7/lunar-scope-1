@@ -71,11 +71,11 @@ export function CoordinateEntryPanel() {
         {/* Famous Lunar Sites Quick Jump */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="landmark-preset" className="label text-[11px] font-semibold text-fg flex items-center gap-1">
+            <label htmlFor="landmark-preset" className="label text-sm font-semibold text-fg flex items-center gap-1">
               <Sparkles className="size-3 text-cyan" />
               Famous Lunar Sites
             </label>
-            <span className="text-[10px] text-fg-dim font-mono">NASA Verified</span>
+            <span className="text-xs text-fg-dim font-mono">NASA Verified</span>
           </div>
 
           {/* Quick-Jump Clickable Chips */}
@@ -86,7 +86,7 @@ export function CoordinateEntryPanel() {
                 <button
                   key={p.label}
                   type="button"
-                  className={`cursor-pointer rounded px-2 py-0.5 font-mono text-[9px] font-medium transition flex items-center gap-1 ${
+                  className={`cursor-pointer rounded px-2 py-0.5 font-mono text-xs font-medium transition flex items-center gap-1 ${
                     isSelected
                       ? 'border border-cyan bg-cyan/25 text-cyan font-bold shadow-sm'
                       : 'border border-line/60 bg-surface-elevated/60 text-fg-muted hover:border-cyan/40 hover:text-cyan'
@@ -124,7 +124,7 @@ export function CoordinateEntryPanel() {
         <form onSubmit={submit} className="space-y-2.5 pt-2 border-t border-line/60" noValidate aria-label="Coordinate entry">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label htmlFor="entry-lat" className="label mb-1 block text-[11px]">
+              <label htmlFor="entry-lat" className="label mb-1 block text-sm">
                 Latitude (°)
               </label>
               <input
@@ -138,7 +138,7 @@ export function CoordinateEntryPanel() {
               />
             </div>
             <div>
-              <label htmlFor="entry-lon" className="label mb-1 block text-[11px]">
+              <label htmlFor="entry-lon" className="label mb-1 block text-sm">
                 Longitude (°E)
               </label>
               <input
