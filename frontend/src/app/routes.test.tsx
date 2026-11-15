@@ -50,7 +50,7 @@ describe('routing and shell', () => {
   it('declares every route, including the footer pages', () => {
     expect(ROUTES.map((r) => r.path)).toEqual([
       '/', '/explorer', '/navigator', '/solar', '/earth', '/comms', '/timeline', '/compare', '/terrain',
-      '/recommendations', '/reports', '/data-sources', '/settings', '/status',
+      '/reports', '/settings', '/status',
     ]);
   });
 
@@ -99,7 +99,6 @@ describe('routing and shell', () => {
   });
 
   it.each([
-    ['/data-sources', 'Data Sources'],
     ['/status', 'System Status'],
     ['/settings', 'Settings'],
   ])('renders %s', async (path, title) => {

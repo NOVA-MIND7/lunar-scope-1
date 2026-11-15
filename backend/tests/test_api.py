@@ -13,8 +13,6 @@ NOT_IMPLEMENTED = [
     ("/api/astronomy/earth-visibility", {"observer": {"latitude_deg": 0, "longitude_deg": 0},
                                          "time_range": {"start_utc": "2027-01-01T00:00:00Z", "end_utc": "2027-01-02T00:00:00Z"}}),
     ("/api/terrain/horizon", {"observer": {"latitude_deg": 0, "longitude_deg": 0}}),
-    ("/api/missions/recommend", {"candidate_site_ids": ["shackleton"], "search_start_utc": "2027-01-01T00:00:00Z",
-                                 "search_end_utc": "2027-02-01T00:00:00Z", "mission_duration_days": 14}),
     ("/api/missions/compare", {"scenarios": [
         {"id": "a", "label": "A", "coordinates": {"latitude_deg": 0, "longitude_deg": 0},
          "landing_time_utc": "2027-01-01T00:00:00Z", "mission_duration_days": 14},

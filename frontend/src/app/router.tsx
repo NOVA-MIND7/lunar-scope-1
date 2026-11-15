@@ -5,7 +5,6 @@ import { ErrorState } from '@/components/common/ErrorState';
 import DashboardPage from './DashboardPage';
 import SettingsPage from './SettingsPage';
 import NotFoundPage from './NotFoundPage';
-import DataSourcesPage from './DataSourcesPage';
 import SystemStatusPage from './SystemStatusPage';
 
 // The 3D explorer pulls in Three.js, so it is code-split.
@@ -17,7 +16,6 @@ const CommsNetworkPage = lazy(() => import('@/features/comms-network/CommsNetwor
 const MissionTimelinePage = lazy(() => import('@/features/mission-timeline/MissionTimelinePage'));
 const SiteComparisonPage = lazy(() => import('@/features/site-comparison/SiteComparisonPage'));
 const TerrainAnalysisPage = lazy(() => import('@/features/terrain-analysis/TerrainAnalysisPage'));
-const RecommendationsPage = lazy(() => import('@/features/recommendations/RecommendationsPage'));
 const MissionReportsPage = lazy(() => import('@/features/mission-reports/MissionReportsPage'));
 
 export const routeObjects: RouteObject[] = [
@@ -38,9 +36,7 @@ export const routeObjects: RouteObject[] = [
       { path: '/timeline', element: <MissionTimelinePage /> },
       { path: '/compare', element: <SiteComparisonPage /> },
       { path: '/terrain', element: <TerrainAnalysisPage /> },
-      { path: '/recommendations', element: <RecommendationsPage /> },
       { path: '/reports', element: <MissionReportsPage /> },
-      { path: '/data-sources', element: <DataSourcesPage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/status', element: <SystemStatusPage /> },
       { path: '*', element: <NotFoundPage /> },

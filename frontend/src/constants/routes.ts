@@ -9,10 +9,8 @@ import {
   CalendarClock,
   GitCompare,
   Mountain,
-  Lightbulb,
   FileText,
   Settings,
-  Database,
   Activity,
 } from 'lucide-react';
 
@@ -38,9 +36,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: '/timeline', label: 'Mission Timeline', description: 'Landing windows and mission phases', icon: CalendarClock, group: 'main', minMode: 'basic' },
   { path: '/compare', label: 'Site Comparison', description: 'Compare scenarios side by side', icon: GitCompare, group: 'main', minMode: 'scientific' },
   { path: '/terrain', label: 'Terrain Analysis', description: 'Horizon and slope analysis', icon: Mountain, group: 'main', minMode: 'scientific' },
-  { path: '/recommendations', label: 'Recommendations', description: 'Ranked site and window recommendations', icon: Lightbulb, group: 'main', minMode: 'scientific' },
   { path: '/reports', label: 'Mission Reports', description: 'Exportable mission reports', icon: FileText, group: 'main', minMode: 'scientific' },
-  { path: '/data-sources', label: 'Data Sources', description: 'Datasets, provenance and integration status', icon: Database, group: 'footer', minMode: 'basic' },
   { path: '/settings', label: 'Settings', description: 'Mission name, data mode and display preferences', icon: Settings, group: 'footer', minMode: 'basic' },
   { path: '/status', label: 'System Status', description: 'Service health and connections', icon: Activity, group: 'footer', minMode: 'scientific' },
 ] as const;
