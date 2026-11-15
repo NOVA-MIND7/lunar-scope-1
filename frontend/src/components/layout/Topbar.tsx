@@ -1,11 +1,9 @@
 import { useLocation } from 'react-router-dom';
-import { Menu, UserRound, MapPin, Flag, FlaskConical } from 'lucide-react';
+import { Menu, MapPin, Flag, FlaskConical } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { useAppStore } from '@/stores/appStore';
 import { useUiStore } from '@/stores/uiStore';
 import { useUtcClock } from '@/hooks/useUtcClock';
-import { useBackendStatus } from '@/hooks/useBackendStatus';
-import { StatusIndicator } from '@/components/common/StatusIndicator';
 import { formatLatitude, formatLongitude } from '@/utils/format';
 
 function pad(n: number) {
@@ -21,7 +19,6 @@ export function Topbar() {
   const setUIMode = useAppStore((s) => s.setUIMode);
   const setMobileOpen = useUiStore((s) => s.setMobileNavOpen);
   const now = useUtcClock();
-  const backend = useBackendStatus();
 
   const time = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
   const date = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}`;
@@ -98,22 +95,6 @@ export function Topbar() {
             {time} <span className="text-xs text-cyan">UTC</span>
           </p>
           <p className="hidden font-mono text-xs text-fg-muted sm:block">{date}</p>
-        </div>
-
-        <div className="hidden items-center gap-3 sm:flex">
-          <StatusIndicator state={backend.state} label={`API ${backend.label.toLowerCase()}`} />
-        </div>
-        <span className="sm:hidden">
-          <StatusIndicator state={backend.state} label={`API ${backend.label.toLowerCase()}`} dotOnly />
-        </span>
-
-        <div
-          className="flex size-8 items-center justify-center rounded-full border border-line-strong bg-panel text-fg-muted"
-          title="User profile (placeholder)"
-          role="img"
-          aria-label="User profile placeholder"
-        >
-          <UserRound className="size-4" aria-hidden />
         </div>
       </div>
     </header>
