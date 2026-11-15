@@ -26,6 +26,8 @@ interface DirectCommsScene3DProps {
   config: DirectCommsConfig;
   isPlaying: boolean;
   speedHoursPerSec: number;
+  batterySyncOrbital: boolean;
+  resetNonce: number;
   simHoursRef: React.MutableRefObject<number>;
   simSocRef: React.MutableRefObject<number>;
   showLabels: boolean;
@@ -220,6 +222,8 @@ function OrbitalDirectStage({
   config,
   isPlaying,
   speedHoursPerSec,
+  batterySyncOrbital,
+  resetNonce,
   simHoursRef,
   simSocRef,
   showLabels,
@@ -229,6 +233,8 @@ function OrbitalDirectStage({
 }: DirectCommsScene3DProps & { active: boolean }) {
   const cfgRef = useRef(config);
   cfgRef.current = config;
+  const batterySyncRef = useRef(batterySyncOrbital);
+  batterySyncRef.current = batterySyncOrbital;
   const onFrameUpdateRef = useRef(onFrameUpdate);
   onFrameUpdateRef.current = onFrameUpdate;
 
@@ -297,15 +303,22 @@ function OrbitalDirectStage({
     }
   }, [active, cameraRequest]);
 
-  // Immediate sync when user drags scrubber or changes parameters while paused
+  // Only reset simulated Battery SoC when user moves Battery SoC slider or clicks Reset
+  useEffect(() => {
+    simSocRef.current = config.batterySocPct;
+  }, [config.batterySocPct, resetNonce, simSocRef]);
+
+  // Sync timeline position & non-SoC parameter changes without resetting battery charge/drain progress
   useEffect(() => {
     simHoursRef.current = config.synodicHours;
-    simSocRef.current = config.batterySocPct;
-    const f = stepDirectCommsFrame(config);
+    const f = stepDirectCommsFrame({
+      ...config,
+      batterySocPct: simSocRef.current,
+    });
     setUiFrame(f);
     onFrameUpdateRef.current(f);
     lastUiSyncRef.current = -1;
-  }, [config, simHoursRef, simSocRef]);
+  }, [config, resetNonce, simHoursRef, simSocRef]);
 
   const upVec = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const tmpQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -317,17 +330,19 @@ function OrbitalDirectStage({
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1);
     if (isPlaying) {
-      const dtHours = dt * speedHoursPerSec;
-      simHoursRef.current = (simHoursRef.current + dtHours) % 708;
-      const preview = stepDirectCommsFrame({
-        ...cfgRef.current,
-        synodicHours: simHoursRef.current,
-        batterySocPct: simSocRef.current,
-      });
-      const deltaSocPct =
-        ((preview.netPowerW * dtHours) / Math.max(200, cfgRef.current.batteryCapacityWh)) * 100;
-      simSocRef.current = Math.max(0, Math.min(100, simSocRef.current + deltaSocPct));
+      simHoursRef.current = (simHoursRef.current + dt * speedHoursPerSec) % 708;
     }
+    const batDtHours = isPlaying && batterySyncRef.current ? dt * speedHoursPerSec : dt / 3600;
+    const preview = stepDirectCommsFrame({
+      ...cfgRef.current,
+      synodicHours: simHoursRef.current,
+      batterySocPct: simSocRef.current,
+    });
+    const prevSoc = simSocRef.current;
+    const deltaSocPct =
+      ((preview.netPowerW * batDtHours) / Math.max(200, cfgRef.current.batteryCapacityWh)) * 100;
+    simSocRef.current = Math.max(0, Math.min(100, simSocRef.current + deltaSocPct));
+    const socChanged = Math.abs(simSocRef.current - prevSoc) > 1e-7;
     packetPhaseRef.current = (packetPhaseRef.current + dt * 0.65) % 1;
 
     const frame = stepDirectCommsFrame({
@@ -472,9 +487,10 @@ function OrbitalDirectStage({
       }
     }
 
-    // Throttle React HUD sync (~8 Hz while playing)
+    // Throttle React HUD sync (~8 Hz while playing, ~4 Hz when real-time battery SoC is changing)
     const nowMs = performance.now();
-    if (isPlaying && nowMs - lastUiSyncRef.current > 125) {
+    const syncIntervalMs = isPlaying ? 125 : 250;
+    if ((isPlaying || socChanged) && nowMs - lastUiSyncRef.current > syncIntervalMs) {
       lastUiSyncRef.current = nowMs;
       setUiFrame(frame);
       onFrameUpdateRef.current(frame);
@@ -688,6 +704,8 @@ const LEFT_WING_POS = new THREE.Vector3(-2.05, 1.02, 0);
 const RIGHT_WING_POS = new THREE.Vector3(2.05, 1.02, 0);
 const LEFT_BAT_PORT = new THREE.Vector3(-0.52, 1.05, 0.44);
 const RIGHT_BAT_PORT = new THREE.Vector3(0.52, 1.05, 0.44);
+const BAT_TO_MAST_START = new THREE.Vector3(0, 1.24, 0.42);
+const BAT_TO_MAST_END = new THREE.Vector3(0, 3.05, 0);
 
 function SurfaceTerrainStage({
   active,
@@ -706,9 +724,11 @@ function SurfaceTerrainStage({
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const packetPhaseRef = useRef(0);
   const chargePhaseRef = useRef(0);
+  const drainPhaseRef = useRef(0);
   const packetRefs = useRef<Array<THREE.Mesh | null>>([]);
   const sunPhotonRefs = useRef<Array<THREE.Mesh | null>>([]);
   const chargePulseRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const drainPulseRefs = useRef<Array<THREE.Mesh | null>>([]);
   const batteryGlowRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
   useEffect(() => {
@@ -782,6 +802,7 @@ function SurfaceTerrainStage({
 
   const isSunVisible = frame.illumination === 'SUNLIT';
   const isGeneratingSolar = isSunVisible && frame.solarGeneratedW > 0;
+  const isBatteryDrainingComms = !isGeneratingSolar && frame.netPowerW < 0 && frame.batterySocPct > 0;
   const socRatio = Math.max(0.06, Math.min(1, frame.batterySocPct / 100));
   const wingTiltX = isGeneratingSolar
     ? Math.max(-0.55, Math.min(0.55, ((45 - frame.sunElDeg) * Math.PI) / 180 * 0.45))
@@ -795,6 +816,7 @@ function SurfaceTerrainStage({
       ? 0.55 + Math.min(1.0, frame.solarGeneratedW / 550) * 0.75
       : 0;
     chargePhaseRef.current = (chargePhaseRef.current + dt * chargeSpeed) % 1;
+    drainPhaseRef.current = (drainPhaseRef.current + dt * 0.85) % 1;
 
     // 1. DTE Data packets
     for (let i = 0; i < 6; i++) {
@@ -847,13 +869,28 @@ function SurfaceTerrainStage({
       );
     }
 
-    // 4. Subtle pulsing glow on the onboard battery core while charging
+    // 4. Battery -> Antenna Mast discharge pulses when running on battery in shadow
+    for (let i = 0; i < 6; i++) {
+      const d = drainPulseRefs.current[i];
+      if (!d) continue;
+      if (!isBatteryDrainingComms || !frame.linkUp) {
+        d.visible = false;
+        continue;
+      }
+      d.visible = true;
+      const t = (drainPhaseRef.current + i / 6) % 1;
+      d.position.lerpVectors(BAT_TO_MAST_START, BAT_TO_MAST_END, t);
+    }
+
+    // 5. Subtle pulsing glow on the onboard battery core while charging or draining
     if (batteryGlowRef.current) {
       batteryGlowRef.current.emissiveIntensity = frame.isCharging
         ? 0.95 + Math.sin(performance.now() * 0.008) * 0.35
-        : isGeneratingSolar
-          ? 0.75
-          : 0.35;
+        : isBatteryDrainingComms
+          ? 0.75 + Math.sin(performance.now() * 0.01) * 0.25
+          : isGeneratingSolar
+            ? 0.75
+            : 0.35;
     }
   });
 
@@ -880,6 +917,9 @@ function SurfaceTerrainStage({
       )}
       {active && isGeneratingSolar && (
         <pointLight position={[0, 3.4, 0.8]} intensity={3.2} distance={10} color="#fde047" />
+      )}
+      {active && !isGeneratingSolar && (
+        <pointLight position={[0, 2.8, 2.4]} intensity={1.6} distance={8} color="#f59e0b" />
       )}
 
       {/* Local Lunar Crater Ridge Terrain */}
@@ -992,6 +1032,12 @@ function SurfaceTerrainStage({
           color={isGeneratingSolar ? '#22c55e' : '#334155'}
           lineWidth={isGeneratingSolar ? 2.4 : 1.1}
         />
+        {/* Power Feed Conduit: Battery Pack -> Antenna Mast */}
+        <Line
+          points={[BAT_TO_MAST_START.toArray(), BAT_TO_MAST_END.toArray()]}
+          color={isBatteryDrainingComms && frame.linkUp ? '#f59e0b' : frame.linkUp ? '#22c55e' : '#334155'}
+          lineWidth={frame.linkUp ? 2.2 : 1.0}
+        />
 
         {/* Antenna Mast & DTE Feed */}
         <mesh position={[0, 1.85, -0.25]} castShadow receiveShadow>
@@ -1027,22 +1073,22 @@ function SurfaceTerrainStage({
                     ? `☀ BATTERY FULL • +${frame.netPowerW}W`
                     : `🔋 DRAINING ${frame.netPowerW}W`}
               </span>
-              <span className="text-fg">{Math.round(frame.batterySocPct)}%</span>
+              <span className="text-fg">{frame.batterySocPct.toFixed(2)}%</span>
             </div>
-            <div className="mt-1 h-1.5 w-36 overflow-hidden rounded-full bg-bg-secondary">
+            <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-bg-secondary">
               <div
                 className={`h-full transition-all duration-150 ${
                   frame.isCharging ? 'bg-success' : socRatio < 0.25 ? 'bg-danger' : 'bg-warning'
                 }`}
-                style={{ width: `${Math.round(frame.batterySocPct)}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, frame.batterySocPct))}%` }}
               />
             </div>
             <div className="mt-0.5 text-[9px] text-fg-muted">
-              Solar {frame.solarGeneratedW}W •{' '}
-              {frame.hoursToFullCharge !== null
-                ? `Full in ${frame.hoursToFullCharge}h`
-                : frame.powerLastsHours !== null
-                  ? `Lasts ${frame.powerLastsHours}h`
+              {frame.batteryRemainingWh.toFixed(2)} Wh •{' '}
+              {frame.netPowerW < 0
+                ? `${(frame.netPowerW / 3600).toFixed(2)} Wh/s • Lasts ${frame.powerLastsHours}h`
+                : frame.hoursToFullCharge !== null
+                  ? `+${(frame.netPowerW / 3600).toFixed(2)} Wh/s • Full in ${frame.hoursToFullCharge}h`
                   : '1800 Wh Ready'}
             </div>
           </div>
@@ -1098,6 +1144,19 @@ function SurfaceTerrainStage({
         >
           <sphereGeometry args={[0.11, 10, 10]} />
           <meshBasicMaterial color="#4ade80" />
+        </mesh>
+      ))}
+
+      {/* Animated Amber Battery Discharge Pulses flowing from Battery Pack -> DTE Mast during shadow comms */}
+      {Array.from({ length: 6 }).map((_, i) => (
+        <mesh
+          key={`drain-pulse-${i}`}
+          ref={(el) => {
+            drainPulseRefs.current[i] = el;
+          }}
+        >
+          <sphereGeometry args={[0.1, 10, 10]} />
+          <meshBasicMaterial color="#f59e0b" />
         </mesh>
       ))}
 
@@ -1316,10 +1375,10 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
           >
             <Zap className="mr-1 size-3" />
             {hudFrame.isCharging
-              ? `CHARGING +${hudFrame.netPowerW}W • ${Math.round(hudFrame.batterySocPct)}% SoC`
+              ? `CHARGING +${hudFrame.netPowerW}W • ${hudFrame.batterySocPct.toFixed(1)}% SoC`
               : hudFrame.netPowerW >= 0
                 ? `${hudFrame.solarGeneratedW}W Solar • Battery Full (${Math.round(hudFrame.batterySocPct)}%)`
-                : `0W Solar • ${hudFrame.netPowerW}W (${hudFrame.powerLastsHours}h left)`}
+                : `0W Solar • ${hudFrame.netPowerW}W • ${hudFrame.batteryRemainingWh.toFixed(1)} Wh (${hudFrame.powerLastsHours}h left)`}
           </span>
         </div>
 
