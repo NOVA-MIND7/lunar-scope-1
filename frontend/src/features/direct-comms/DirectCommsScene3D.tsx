@@ -3,7 +3,7 @@ import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { Html, Line, OrbitControls, Stars, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { Compass, Eye, Globe2, Mountain, RotateCcw, Sun, Wifi, WifiOff } from 'lucide-react';
+import { BatteryCharging, Compass, Eye, Globe2, Mountain, RotateCcw, Sun, Wifi, WifiOff, Zap } from 'lucide-react';
 import { TEXTURE_YAW, vector3ToLatLon } from '@/utils/lunarCoordinates';
 import { isWebGLAvailable } from '@/utils/webgl';
 import { useMoonTextures } from '../lunar-explorer/globe/useMoonTextures';
@@ -20,12 +20,14 @@ import {
 
 export type DirectViewMode = 'ORBITAL' | 'TERRAIN';
 export type DirectCameraPreset = 'overview' | 'moon' | 'earth' | 'south-pole';
+export type TerrainCameraPreset = 'rover-charge' | 'ridge-wide';
 
 interface DirectCommsScene3DProps {
   config: DirectCommsConfig;
   isPlaying: boolean;
   speedHoursPerSec: number;
   simHoursRef: React.MutableRefObject<number>;
+  simSocRef: React.MutableRefObject<number>;
   showLabels: boolean;
   cameraRequest: { id: number; target: DirectCameraPreset };
   onSelectSiteCoords: (lat: number, lon: number) => void;
@@ -219,6 +221,7 @@ function OrbitalDirectStage({
   isPlaying,
   speedHoursPerSec,
   simHoursRef,
+  simSocRef,
   showLabels,
   cameraRequest,
   onSelectSiteCoords,
@@ -289,7 +292,7 @@ function OrbitalDirectStage({
       cameraGoalPosRef.current = new THREE.Vector3(DC_MOON_CENTER[0] + 0.3, -4.1, 1.5);
       cameraGoalTargetRef.current = new THREE.Vector3(...DC_MOON_CENTER);
     } else {
-      cameraGoalPosRef.current = new THREE.Vector3(0, 4.6, 13.8);
+      cameraGoalPosRef.current = new THREE.Vector3(0, 4.2, 16.0);
       cameraGoalTargetRef.current = new THREE.Vector3(0, 0, 0);
     }
   }, [active, cameraRequest]);
@@ -297,11 +300,12 @@ function OrbitalDirectStage({
   // Immediate sync when user drags scrubber or changes parameters while paused
   useEffect(() => {
     simHoursRef.current = config.synodicHours;
+    simSocRef.current = config.batterySocPct;
     const f = stepDirectCommsFrame(config);
     setUiFrame(f);
     onFrameUpdateRef.current(f);
     lastUiSyncRef.current = -1;
-  }, [config, simHoursRef]);
+  }, [config, simHoursRef, simSocRef]);
 
   const upVec = useMemo(() => new THREE.Vector3(0, 1, 0), []);
   const tmpQuat = useMemo(() => new THREE.Quaternion(), []);
@@ -313,13 +317,23 @@ function OrbitalDirectStage({
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1);
     if (isPlaying) {
-      simHoursRef.current = (simHoursRef.current + dt * speedHoursPerSec) % 708;
+      const dtHours = dt * speedHoursPerSec;
+      simHoursRef.current = (simHoursRef.current + dtHours) % 708;
+      const preview = stepDirectCommsFrame({
+        ...cfgRef.current,
+        synodicHours: simHoursRef.current,
+        batterySocPct: simSocRef.current,
+      });
+      const deltaSocPct =
+        ((preview.netPowerW * dtHours) / Math.max(200, cfgRef.current.batteryCapacityWh)) * 100;
+      simSocRef.current = Math.max(0, Math.min(100, simSocRef.current + deltaSocPct));
     }
     packetPhaseRef.current = (packetPhaseRef.current + dt * 0.65) % 1;
 
     const frame = stepDirectCommsFrame({
       ...cfgRef.current,
       synodicHours: simHoursRef.current,
+      batterySocPct: simSocRef.current,
     });
 
     // 1. Move Sun orb & shadow-casting directional light
@@ -558,7 +572,7 @@ function OrbitalDirectStage({
       {/* Earth Globe with axial tilt + clouds */}
       <EarthModelMesh spinGroupRef={earthSpinRef} />
 
-      {/* Moon Surface Antenna / Rover Beacon */}
+      {/* Moon Surface Antenna / Rover Beacon + Solar Charging Halo */}
       <group ref={siteMarkerRef} position={uiFrame.siteWorldPos}>
         <mesh position={[0, 0.05, 0]}>
           <cylinderGeometry args={[0.012, 0.018, 0.1, 10]} />
@@ -568,6 +582,17 @@ function OrbitalDirectStage({
           <sphereGeometry args={[0.042, 14, 14]} />
           <meshBasicMaterial color={uiFrame.linkUp ? '#22c55e' : '#ef4444'} />
         </mesh>
+        {uiFrame.solarGeneratedW > 0 && (
+          <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.06, 0.11, 20]} />
+            <meshBasicMaterial
+              color={uiFrame.isCharging ? '#22c55e' : '#fde047'}
+              side={THREE.DoubleSide}
+              transparent
+              opacity={0.85}
+            />
+          </mesh>
+        )}
         <Html
           position={[0, 0.28, 0]}
           center
@@ -659,28 +684,49 @@ function OrbitalDirectStage({
   );
 }
 
+const LEFT_WING_POS = new THREE.Vector3(-2.05, 1.02, 0);
+const RIGHT_WING_POS = new THREE.Vector3(2.05, 1.02, 0);
+const LEFT_BAT_PORT = new THREE.Vector3(-0.52, 1.05, 0.44);
+const RIGHT_BAT_PORT = new THREE.Vector3(0.52, 1.05, 0.44);
+
 function SurfaceTerrainStage({
   active,
   config,
   frame,
+  showLabels,
+  terrainCamReq,
 }: {
   active: boolean;
   config: DirectCommsConfig;
   frame: DirectCommsFrame;
+  showLabels: boolean;
+  terrainCamReq: { id: number; target: TerrainCameraPreset };
 }) {
   const { camera } = useThree();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const packetPhaseRef = useRef(0);
+  const chargePhaseRef = useRef(0);
   const packetRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const sunPhotonRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const chargePulseRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const batteryGlowRef = useRef<THREE.MeshStandardMaterial | null>(null);
 
   useEffect(() => {
     if (!active) return;
-    camera.position.set(0, 22, 42);
-    if (controlsRef.current) {
-      controlsRef.current.target.set(0, 3, 0);
-      controlsRef.current.update();
+    if (terrainCamReq.target === 'ridge-wide') {
+      camera.position.set(0, 19, 36);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 2.5, 0);
+        controlsRef.current.update();
+      }
+    } else {
+      camera.position.set(4.8, 4.0, 9.2);
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 1.35, 0);
+        controlsRef.current.update();
+      }
     }
-  }, [active, camera]);
+  }, [active, camera, terrainCamReq]);
 
   const terrainGeometry = useMemo(() => {
     const size = 150;
@@ -724,10 +770,33 @@ function SurfaceTerrainStage({
   }, [frame.earthAzDeg, frame.earthElDeg]);
 
   const dishOrigin = useMemo(() => new THREE.Vector3(0, 3.2, 0), []);
+  const sunOrbPos = useMemo(() => sunSkyVec.clone().normalize().multiplyScalar(105), [sunSkyVec]);
+  const sunBeamStartLeft = useMemo(
+    () => sunSkyVec.clone().normalize().multiplyScalar(32).add(LEFT_WING_POS),
+    [sunSkyVec],
+  );
+  const sunBeamStartRight = useMemo(
+    () => sunSkyVec.clone().normalize().multiplyScalar(32).add(RIGHT_WING_POS),
+    [sunSkyVec],
+  );
+
+  const isSunVisible = frame.illumination === 'SUNLIT';
+  const isGeneratingSolar = isSunVisible && frame.solarGeneratedW > 0;
+  const socRatio = Math.max(0.06, Math.min(1, frame.batterySocPct / 100));
+  const wingTiltX = isGeneratingSolar
+    ? Math.max(-0.55, Math.min(0.55, ((45 - frame.sunElDeg) * Math.PI) / 180 * 0.45))
+    : 0.28;
 
   useFrame((_, delta) => {
     if (!active) return;
-    packetPhaseRef.current = (packetPhaseRef.current + Math.min(delta, 0.1) * 0.7) % 1;
+    const dt = Math.min(delta, 0.1);
+    packetPhaseRef.current = (packetPhaseRef.current + dt * 0.7) % 1;
+    const chargeSpeed = isGeneratingSolar
+      ? 0.55 + Math.min(1.0, frame.solarGeneratedW / 550) * 0.75
+      : 0;
+    chargePhaseRef.current = (chargePhaseRef.current + dt * chargeSpeed) % 1;
+
+    // 1. DTE Data packets
     for (let i = 0; i < 6; i++) {
       const m = packetRefs.current[i];
       if (!m) continue;
@@ -739,16 +808,60 @@ function SurfaceTerrainStage({
       const t = (packetPhaseRef.current + i / 6) % 1;
       m.position.lerpVectors(dishOrigin, earthSkyVec, t);
     }
-  });
 
-  const isSunVisible =
-    frame.illumination === 'SUNLIT';
+    // 2. Sunlight photons streaming onto Left & Right Solar Wings
+    for (let i = 0; i < 6; i++) {
+      const p = sunPhotonRefs.current[i];
+      if (!p) continue;
+      if (!isGeneratingSolar) {
+        p.visible = false;
+        continue;
+      }
+      p.visible = true;
+      const isLeft = i % 2 === 0;
+      const pairIdx = Math.floor(i / 2);
+      const t = (chargePhaseRef.current + pairIdx / 3) % 1;
+      p.position.lerpVectors(
+        isLeft ? sunBeamStartLeft : sunBeamStartRight,
+        isLeft ? LEFT_WING_POS : RIGHT_WING_POS,
+        t,
+      );
+    }
+
+    // 3. Electric charge pulses flowing from Solar Wings -> Battery Pack
+    for (let i = 0; i < 8; i++) {
+      const c = chargePulseRefs.current[i];
+      if (!c) continue;
+      if (!isGeneratingSolar) {
+        c.visible = false;
+        continue;
+      }
+      c.visible = true;
+      const isLeft = i % 2 === 0;
+      const laneIdx = Math.floor(i / 2);
+      const t = (chargePhaseRef.current * 1.45 + laneIdx / 4) % 1;
+      c.position.lerpVectors(
+        isLeft ? LEFT_WING_POS : RIGHT_WING_POS,
+        isLeft ? LEFT_BAT_PORT : RIGHT_BAT_PORT,
+        t,
+      );
+    }
+
+    // 4. Subtle pulsing glow on the onboard battery core while charging
+    if (batteryGlowRef.current) {
+      batteryGlowRef.current.emissiveIntensity = frame.isCharging
+        ? 0.95 + Math.sin(performance.now() * 0.008) * 0.35
+        : isGeneratingSolar
+          ? 0.75
+          : 0.35;
+    }
+  });
 
   return (
     <group visible={active}>
       {active && <color attach="background" args={['#030612']} />}
       {active && <Stars radius={170} depth={45} count={1100} factor={2} saturation={0} fade />}
-      {active && <hemisphereLight args={['#cbd5e1', '#0f172a', 0.25]} />}
+      {active && <hemisphereLight args={['#cbd5e1', '#0f172a', 0.28]} />}
       {active && (
         <directionalLight
           position={sunSkyVec.toArray()}
@@ -765,66 +878,231 @@ function SurfaceTerrainStage({
           shadow-camera-bottom={-75}
         />
       )}
+      {active && isGeneratingSolar && (
+        <pointLight position={[0, 3.4, 0.8]} intensity={3.2} distance={10} color="#fde047" />
+      )}
 
       {/* Local Lunar Crater Ridge Terrain */}
       <mesh geometry={terrainGeometry} receiveShadow castShadow>
         <meshStandardMaterial color="#64748b" roughness={0.94} metalness={0.05} />
       </mesh>
 
-      {/* Rover Chassis, Dual Tracking Solar Wings, & DTE Antenna Mast */}
+      {/* Rover Chassis, Wheels, Sun-Tracking Solar Wings, Onboard Battery Pack & DTE Mast */}
       <group position={[0, 0, 0]}>
-        <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
-          <boxGeometry args={[1.9, 0.75, 1.5]} />
+        {/* 4 Rugged Lunar Rover Wheels */}
+        {(
+          [
+            [-0.82, 0.24, 0.58],
+            [0.82, 0.24, 0.58],
+            [-0.82, 0.24, -0.58],
+            [0.82, 0.24, -0.58],
+          ] as const
+        ).map((wPos, idx) => (
+          <mesh key={`wheel-${idx}`} position={wPos} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.25, 0.25, 0.22, 16]} />
+            <meshStandardMaterial color="#334155" roughness={0.8} metalness={0.35} />
+          </mesh>
+        ))}
+
+        {/* Main Rover Body Deck */}
+        <mesh position={[0, 0.56, 0]} castShadow receiveShadow>
+          <boxGeometry args={[1.95, 0.68, 1.48]} />
           <meshStandardMaterial color="#cbd5e1" roughness={0.45} metalness={0.55} />
         </mesh>
-        {/* Left & Right Photovoltaic Solar Wings (glow blue/cyan when generating power) */}
-        <mesh position={[-2.1, 0.95, 0]} rotation={[0.35, 0, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.1, 0.08, 1.1]} />
-          <meshStandardMaterial
-            color={frame.solarGeneratedW > 0 ? '#0284c7' : '#1e293b'}
-            emissive={frame.solarGeneratedW > 0 ? '#0369a1' : '#000000'}
-            emissiveIntensity={frame.solarGeneratedW > 0 ? 0.55 : 0}
-            roughness={0.28}
-            metalness={0.65}
+
+        {/* Visible Onboard Battery Pack Module + Dynamic Charge Fill Core */}
+        <group position={[0, 1.06, 0.44]}>
+          {/* Dark Protective Casing */}
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[1.14, 0.36, 0.44]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.35} metalness={0.65} transparent opacity={0.86} />
+          </mesh>
+          {/* Positive Terminal Cap */}
+          <mesh position={[0.61, 0, 0]}>
+            <boxGeometry args={[0.08, 0.22, 0.26]} />
+            <meshStandardMaterial color="#f59e0b" metalness={0.7} roughness={0.25} />
+          </mesh>
+          {/* Dynamic Inner Charge Bar (scales with Battery SoC %) */}
+          <mesh position={[-0.49 * (1 - socRatio), 0, 0]} scale={[socRatio, 1, 1]}>
+            <boxGeometry args={[0.98, 0.24, 0.32]} />
+            <meshStandardMaterial
+              ref={batteryGlowRef}
+              color={frame.isCharging ? '#22c55e' : socRatio < 0.25 ? '#ef4444' : '#f59e0b'}
+              emissive={frame.isCharging ? '#16a34a' : socRatio < 0.25 ? '#dc2626' : '#d97706'}
+              emissiveIntensity={frame.isCharging ? 1.0 : 0.45}
+              roughness={0.25}
+            />
+          </mesh>
+          {/* Wireframe outline bezel */}
+          <Line
+            points={[
+              [-0.57, 0.19, 0.23],
+              [0.57, 0.19, 0.23],
+              [0.57, -0.19, 0.23],
+              [-0.57, -0.19, 0.23],
+              [-0.57, 0.19, 0.23],
+            ]}
+            color={frame.isCharging ? '#4ade80' : '#64748b'}
+            lineWidth={1.3}
           />
+        </group>
+
+        {/* Solar Wing Boom Crossbar */}
+        <mesh position={[0, 0.96, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.045, 0.045, 4.1, 10]} />
+          <meshStandardMaterial color="#94a3b8" metalness={0.7} roughness={0.3} />
         </mesh>
-        <mesh position={[2.1, 0.95, 0]} rotation={[0.35, 0, 0]} castShadow receiveShadow>
-          <boxGeometry args={[2.1, 0.08, 1.1]} />
-          <meshStandardMaterial
-            color={frame.solarGeneratedW > 0 ? '#0284c7' : '#1e293b'}
-            emissive={frame.solarGeneratedW > 0 ? '#0369a1' : '#000000'}
-            emissiveIntensity={frame.solarGeneratedW > 0 ? 0.55 : 0}
-            roughness={0.28}
-            metalness={0.65}
-          />
-        </mesh>
+
+        {/* Left & Right Photovoltaic Solar Wings (tilt & glow when sunlight hits them) */}
+        {([-2.05, 2.05] as const).map((xPos, idx) => (
+          <group key={`wing-${idx}`} position={[xPos, 1.02, 0]} rotation={[wingTiltX, 0, 0]}>
+            <mesh castShadow receiveShadow>
+              <boxGeometry args={[2.15, 0.08, 1.24]} />
+              <meshStandardMaterial
+                color={isGeneratingSolar ? '#0ea5e9' : '#1e293b'}
+                emissive={isGeneratingSolar ? '#0284c7' : '#000000'}
+                emissiveIntensity={isGeneratingSolar ? 0.5 + (frame.sunlightReceivingPct / 100) * 0.65 : 0}
+                roughness={0.22}
+                metalness={0.7}
+              />
+            </mesh>
+            {/* Gold solar cell trim rail */}
+            <mesh position={[0, 0.045, 0]}>
+              <boxGeometry args={[2.08, 0.018, 0.08]} />
+              <meshBasicMaterial color={isGeneratingSolar ? '#fde047' : '#475569'} />
+            </mesh>
+            {/* Golden sunlight impact glow spot on the panel top when hit by Sun */}
+            {isGeneratingSolar && (
+              <mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[0.72, 24]} />
+                <meshBasicMaterial color="#fde047" transparent opacity={0.28} depthWrite={false} />
+              </mesh>
+            )}
+          </group>
+        ))}
+
+        {/* Power Conduits connecting Solar Wings -> Battery Pack */}
+        <Line
+          points={[LEFT_WING_POS.toArray(), LEFT_BAT_PORT.toArray()]}
+          color={isGeneratingSolar ? '#22c55e' : '#334155'}
+          lineWidth={isGeneratingSolar ? 2.4 : 1.1}
+        />
+        <Line
+          points={[RIGHT_WING_POS.toArray(), RIGHT_BAT_PORT.toArray()]}
+          color={isGeneratingSolar ? '#22c55e' : '#334155'}
+          lineWidth={isGeneratingSolar ? 2.4 : 1.1}
+        />
+
         {/* Antenna Mast & DTE Feed */}
-        <mesh position={[0, 1.85, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[0.22, 0.36, 2.2, 14]} />
+        <mesh position={[0, 1.85, -0.25]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.2, 0.32, 2.2, 14]} />
           <meshStandardMaterial color="#00d9ff" roughness={0.45} metalness={0.45} />
         </mesh>
         <mesh position={[0, 3.2, 0]} castShadow>
           <sphereGeometry args={[0.42, 16, 16]} />
           <meshBasicMaterial color={frame.linkUp ? '#22c55e' : '#ef4444'} />
         </mesh>
+
+        {/* Floating Live Battery Charge Pill next to Rover */}
+        <Html
+          position={[0, 2.25, 0.95]}
+          center
+          zIndexRange={[8, 0]}
+          style={{ pointerEvents: 'none', display: active && showLabels ? 'block' : 'none' }}
+        >
+          <div
+            className={`whitespace-nowrap rounded border px-2 py-1 font-mono text-[10px] shadow-lg backdrop-blur ${
+              frame.isCharging
+                ? 'border-success/75 bg-bg/90 text-success'
+                : frame.netPowerW >= 0
+                  ? 'border-cyan/70 bg-bg/90 text-cyan'
+                  : 'border-warning/75 bg-bg/90 text-warning'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 font-bold">
+              <span>
+                {frame.isCharging
+                  ? `⚡ CHARGING +${frame.netPowerW}W`
+                  : frame.netPowerW >= 0
+                    ? `☀ BATTERY FULL • +${frame.netPowerW}W`
+                    : `🔋 DRAINING ${frame.netPowerW}W`}
+              </span>
+              <span className="text-fg">{Math.round(frame.batterySocPct)}%</span>
+            </div>
+            <div className="mt-1 h-1.5 w-36 overflow-hidden rounded-full bg-bg-secondary">
+              <div
+                className={`h-full transition-all duration-150 ${
+                  frame.isCharging ? 'bg-success' : socRatio < 0.25 ? 'bg-danger' : 'bg-warning'
+                }`}
+                style={{ width: `${Math.round(frame.batterySocPct)}%` }}
+              />
+            </div>
+            <div className="mt-0.5 text-[9px] text-fg-muted">
+              Solar {frame.solarGeneratedW}W •{' '}
+              {frame.hoursToFullCharge !== null
+                ? `Full in ${frame.hoursToFullCharge}h`
+                : frame.powerLastsHours !== null
+                  ? `Lasts ${frame.powerLastsHours}h`
+                  : '1800 Wh Ready'}
+            </div>
+          </div>
+        </Html>
       </group>
 
-      {/* Sunlight ray to rover solar array when directly illuminated */}
-      {isSunVisible && (
-        <Line
-          points={[sunSkyVec.clone().normalize().multiplyScalar(105).toArray(), [0, 1.0, 0]]}
-          color="#fde047"
-          lineWidth={1.1}
-          dashed
-          dashSize={2.2}
-          gapSize={1.8}
-          transparent
-          opacity={0.42}
-        />
+      {/* Sunlight rays + animated Sun photons hitting both Solar Wings */}
+      {isGeneratingSolar && (
+        <>
+          <Line
+            points={[sunOrbPos.toArray(), LEFT_WING_POS.toArray()]}
+            color="#fde047"
+            lineWidth={1.8}
+            dashed
+            dashSize={2.0}
+            gapSize={1.3}
+            transparent
+            opacity={0.55}
+          />
+          <Line
+            points={[sunOrbPos.toArray(), RIGHT_WING_POS.toArray()]}
+            color="#fde047"
+            lineWidth={1.8}
+            dashed
+            dashSize={2.0}
+            gapSize={1.3}
+            transparent
+            opacity={0.55}
+          />
+        </>
       )}
 
+      {/* Animated Golden Sunlight Photons hitting Solar Panels */}
+      {Array.from({ length: 6 }).map((_, i) => (
+        <mesh
+          key={`sun-photon-${i}`}
+          ref={(el) => {
+            sunPhotonRefs.current[i] = el;
+          }}
+        >
+          <sphereGeometry args={[0.19, 10, 10]} />
+          <meshBasicMaterial color="#fde047" />
+        </mesh>
+      ))}
+
+      {/* Animated Emerald Charge Pulses flowing from Solar Wings -> Battery Pack */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <mesh
+          key={`charge-pulse-${i}`}
+          ref={(el) => {
+            chargePulseRefs.current[i] = el;
+          }}
+        >
+          <sphereGeometry args={[0.11, 10, 10]} />
+          <meshBasicMaterial color="#4ade80" />
+        </mesh>
+      ))}
+
       {/* Moving Sun Orb in Sky */}
-      <mesh position={sunSkyVec.clone().normalize().multiplyScalar(105)}>
+      <mesh position={sunOrbPos}>
         <sphereGeometry args={[3.4, 24, 24]} />
         <meshBasicMaterial color={isSunVisible ? '#fde047' : '#ef4444'} />
       </mesh>
@@ -867,7 +1145,7 @@ function SurfaceTerrainStage({
         ref={controlsRef}
         enabled={active}
         enablePan={false}
-        minDistance={12}
+        minDistance={3.8}
         maxDistance={98}
         maxPolarAngle={Math.PI / 2 - 0.03}
       />
@@ -876,10 +1154,14 @@ function SurfaceTerrainStage({
 }
 
 export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
-  const { config, onFrameUpdate, simHoursRef } = props;
+  const { config, onFrameUpdate, simHoursRef, simSocRef, showLabels } = props;
   const webglOk = useMemo(() => isWebGLAvailable(), []);
   const [viewMode, setViewMode] = useState<DirectViewMode>('ORBITAL');
   const [camReq, setCamReq] = useState<{ id: number; target: DirectCameraPreset }>(props.cameraRequest);
+  const [terrainCamReq, setTerrainCamReq] = useState<{ id: number; target: TerrainCameraPreset }>({
+    id: 0,
+    target: 'rover-charge',
+  });
   const [hudFrame, setHudFrame] = useState<DirectCommsFrame>(() => stepDirectCommsFrame(config));
 
   useEffect(() => {
@@ -895,7 +1177,7 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
   );
 
   return (
-    <div className="panel flex h-full min-h-[500px] flex-col overflow-hidden">
+    <div className="panel flex h-[520px] flex-col overflow-hidden">
       {/* Top Bar: View Switcher + Camera Presets */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-bg-secondary/90 px-3.5 py-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -925,7 +1207,7 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
           </button>
         </div>
 
-        {viewMode === 'ORBITAL' && (
+        {viewMode === 'ORBITAL' ? (
           <div className="flex flex-wrap items-center gap-1">
             {(
               [
@@ -945,11 +1227,29 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
               </button>
             ))}
           </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-1">
+            {(
+              [
+                ['rover-charge', 'Rover Charge', BatteryCharging],
+                ['ridge-wide', 'Wide Ridge', Mountain],
+              ] as const
+            ).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTerrainCamReq((p) => ({ id: p.id + 1, target: key }))}
+                className="btn py-1 px-2 text-[11px] cursor-pointer"
+              >
+                <Icon className="size-3" /> {label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
       {/* 3D Canvas Viewport */}
-      <div className="relative flex-1 min-h-[430px] bg-[#040814]">
+      <div className="relative flex-1 min-h-0 bg-[#040814]">
         {!webglOk ? (
           <div className="flex h-full items-center justify-center p-6 text-center text-sm text-fg-muted">
             WebGL is unavailable in this browser context. Sun position and Direct Communication telemetry remain available.
@@ -962,18 +1262,21 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
               </div>
             }
           >
-            <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 4.6, 13.8], fov: 42 }}>
+            <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 4.2, 16.0], fov: 42 }}>
               <OrbitalDirectStage
                 {...props}
                 active={viewMode === 'ORBITAL'}
                 cameraRequest={camReq}
                 simHoursRef={simHoursRef}
+                simSocRef={simSocRef}
                 onFrameUpdate={handleFrame}
               />
               <SurfaceTerrainStage
                 active={viewMode === 'TERRAIN'}
                 config={config}
                 frame={hudFrame}
+                showLabels={showLabels}
+                terrainCamReq={terrainCamReq}
               />
             </Canvas>
           </SceneErrorBoundary>
@@ -1004,15 +1307,19 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
           </span>
           <span
             className={`badge backdrop-blur ${
-              hudFrame.netPowerW >= 0
-                ? 'border-success/50 bg-bg/90 text-success'
-                : 'border-warning/60 bg-bg/90 text-warning'
+              hudFrame.isCharging
+                ? 'border-success/60 bg-bg/90 text-success'
+                : hudFrame.netPowerW >= 0
+                  ? 'border-cyan/60 bg-bg/90 text-cyan'
+                  : 'border-warning/60 bg-bg/90 text-warning'
             }`}
           >
-            {hudFrame.solarGeneratedW}W Solar •{' '}
-            {hudFrame.netPowerW >= 0
-              ? `+${hudFrame.netPowerW}W Sustained`
-              : `${hudFrame.netPowerW}W (${hudFrame.powerLastsHours}h left)`}
+            <Zap className="mr-1 size-3" />
+            {hudFrame.isCharging
+              ? `CHARGING +${hudFrame.netPowerW}W • ${Math.round(hudFrame.batterySocPct)}% SoC`
+              : hudFrame.netPowerW >= 0
+                ? `${hudFrame.solarGeneratedW}W Solar • Battery Full (${Math.round(hudFrame.batterySocPct)}%)`
+                : `0W Solar • ${hudFrame.netPowerW}W (${hudFrame.powerLastsHours}h left)`}
           </span>
         </div>
 
@@ -1026,7 +1333,7 @@ export function DirectCommsScene3D(props: DirectCommsScene3DProps) {
               <span className="inline-block size-2 rounded-full bg-danger" /> Blocked (Sun / Horizon / Dish)
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block size-2 rounded-full bg-warning" /> Moving Sun &amp; Shadows
+              <span className="inline-block size-2 rounded-full bg-warning" /> Solar Charging Rays
             </span>
           </div>
           <div className="rounded border border-line bg-bg/85 px-2.5 py-1 font-mono text-[10px] text-fg-muted backdrop-blur">

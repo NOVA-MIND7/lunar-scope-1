@@ -142,7 +142,9 @@ export interface DirectCommsFrame {
   txPowerDrawW: number;
   totalLoadW: number;
   netPowerW: number;
+  batterySocPct: number;
   batteryRemainingWh: number;
+  isCharging: boolean;
   powerLastsHours: number | null; // null => Sustained (netPowerW >= 0)
   hoursToFullCharge: number | null;
 
@@ -403,6 +405,7 @@ export function stepDirectCommsFrame(cfg: DirectCommsConfig): DirectCommsFrame {
   const batteryCap = Math.max(200, cfg.batteryCapacityWh);
   const clampedSoc = Math.max(0, Math.min(100, cfg.batterySocPct));
   const batteryRemainingWh = Number(((batteryCap * clampedSoc) / 100).toFixed(1));
+  const isCharging = solarGeneratedW > 0 && netPowerW > 0 && clampedSoc < 99.9;
   const powerLastsHours =
     netPowerW < 0 ? Number((batteryRemainingWh / Math.abs(netPowerW)).toFixed(2)) : null;
   const hoursToFullCharge =
@@ -466,7 +469,9 @@ export function stepDirectCommsFrame(cfg: DirectCommsConfig): DirectCommsFrame {
     txPowerDrawW,
     totalLoadW,
     netPowerW,
+    batterySocPct: Number(clampedSoc.toFixed(1)),
     batteryRemainingWh,
+    isCharging,
     powerLastsHours,
     hoursToFullCharge,
 
