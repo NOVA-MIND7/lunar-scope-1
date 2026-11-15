@@ -18,7 +18,7 @@ export function createInitialState(): AppState {
     isSimulationPlaying: false,
     comparisonScenarios: [],
     activeVisualization: 'globe',
-    uiMode: 'scientific',
+    uiMode: 'basic',
   };
 }
 
