@@ -55,7 +55,6 @@ export default function TerrainAnalysisPage() {
   const [layerMode, setLayerMode] = useState<MoonTrekLayerMode>('wac-relief');
   const [exaggeration, setExaggeration] = useState<number>(1.5);
   const [sunAzimuthDeg, setSunAzimuthDeg] = useState<number>(40);
-  const [showDemOverlay, setShowDemOverlay] = useState<boolean>(true);
   const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [cameraPreset, setCameraPreset] = useState<{
     id: number;
@@ -255,8 +254,6 @@ export default function TerrainAnalysisPage() {
               cameraPreset={cameraPreset}
               selectedLat={lat}
               selectedLon={lon}
-              demSamples={demSamples}
-              showDemOverlay={showDemOverlay}
               onHoverCoords={setHoverCoords}
               onSelectCoords={handleGlobeSelect}
             />
@@ -289,16 +286,6 @@ export default function TerrainAnalysisPage() {
                   className="btn-icon size-7 text-fg-muted hover:text-cyan cursor-pointer"
                 >
                   <ZoomOut className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title="Toggle South Pole DEM scatter overlay"
-                  onClick={() => setShowDemOverlay((v) => !v)}
-                  className={`rounded px-2 py-1 font-mono text-xs transition cursor-pointer ${
-                    showDemOverlay ? 'bg-success/20 text-success' : 'text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  DEM {demSamples.length > 0 ? `(${demSamples.length})` : ''}
                 </button>
               </div>
             </div>

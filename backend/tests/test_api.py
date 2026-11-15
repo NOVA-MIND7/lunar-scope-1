@@ -216,3 +216,18 @@ def test_cors_allows_dev_origin_only():
     assert ok.headers.get("access-control-allow-origin") == "http://localhost:5173"
     bad = client.get("/api/health", headers={"Origin": "http://evil.example"})
     assert "access-control-allow-origin" not in bad.headers
+
+
+def test_south_pole_terrain_even_sampling():
+    r = client.get("/api/data/terrain/south-pole?limit=1500")
+    assert r.status_code == 200
+    body = r.json()
+    records = body["records"]
+    assert len(records) == 1500
+    lats = [rec["latitude_deg"] for rec in records]
+    lons = [rec["longitude_deg"] for rec in records]
+    assert max(lats) - min(lats) > 1.2
+    assert any(-180 <= lon < -90 for lon in lons)
+    assert any(-90 <= lon < 0 for lon in lons)
+    assert any(0 <= lon < 90 for lon in lons)
+    assert any(90 <= lon <= 180 for lon in lons)

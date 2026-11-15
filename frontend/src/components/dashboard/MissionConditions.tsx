@@ -113,7 +113,7 @@ export function MissionStatus() {
           {backend.isOnline ? (
             <StatusIndicator state="online" label="Ephemeris Engine Connected" />
           ) : backend.isPending ? (
-            <StatusIndicator state="pending" label="Checking Engine" />
+            <StatusIndicator state="pending" label="Checking Engine…" />
           ) : (
             <StatusIndicator state="offline" label="Backend Offline" />
           )}
