@@ -147,7 +147,12 @@ def get_lunar_environment(start_utc: datetime | None = None, end_utc: datetime |
 def get_south_pole_terrain(limit: int = 2000) -> dict[str, Any]:
     path = _data_dir("raw") / "south_pole_terrain.txt"
     rows = _read_csv(str(path))
-    sampled = _sample(rows, limit, 1)
+    if limit > 0 and len(rows) > limit:
+        total = len(rows)
+        # Uniform index stride across the full 2D terrain grid rather than slicing rows[:limit].
+        sampled = [rows[(i * total) // limit] for i in range(limit)]
+    else:
+        sampled = rows
     return {
         "dataset": "south_pole_terrain",
         "source": "Karanna raw data",
