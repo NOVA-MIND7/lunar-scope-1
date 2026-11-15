@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  BatteryCharging,
+  Clock,
   Compass,
   Eye,
   EyeOff,
@@ -12,6 +14,7 @@ import {
   Sun,
   Wifi,
   WifiOff,
+  Zap,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useAppStore } from '@/stores/appStore';
@@ -60,6 +63,9 @@ export default function DirectCommsPage() {
   const [synodicHours, setSynodicHours] = useState<number>(0);
   const [band, setBand] = useState<DirectBand>('KA_BAND');
   const [txPowerWatts, setTxPowerWatts] = useState<number>(35);
+  const [payloadMb, setPayloadMb] = useState<number>(250);
+  const [batterySocPct, setBatterySocPct] = useState<number>(78);
+  const batteryCapacityWh = 1800;
   const [useTerrainHorizon, setUseTerrainHorizon] = useState<boolean>(true);
   const [rotateEarth, setRotateEarth] = useState<boolean>(true);
   const [enableGoldstone, setEnableGoldstone] = useState<boolean>(true);
@@ -82,13 +88,29 @@ export default function DirectCommsPage() {
       synodicHours,
       band,
       txPowerWatts,
+      payloadMb,
+      batteryCapacityWh,
+      batterySocPct,
       useTerrainHorizon,
       rotateEarth,
       enableGoldstone,
       enableMadrid,
       enableCanberra,
     }),
-    [site, synodicHours, band, txPowerWatts, useTerrainHorizon, rotateEarth, enableGoldstone, enableMadrid, enableCanberra],
+    [
+      site,
+      synodicHours,
+      band,
+      txPowerWatts,
+      payloadMb,
+      batteryCapacityWh,
+      batterySocPct,
+      useTerrainHorizon,
+      rotateEarth,
+      enableGoldstone,
+      enableMadrid,
+      enableCanberra,
+    ],
   );
 
   const [frame, setFrame] = useState<DirectCommsFrame>(() => stepDirectCommsFrame(config));
@@ -115,6 +137,21 @@ export default function DirectCommsPage() {
   }, []);
 
   const cycleDays = (frame.synodicHours / 24).toFixed(1);
+
+  const formatDuration = (totalSec: number) => {
+    if (totalSec < 60) return `${totalSec.toFixed(1)} s`;
+    const mins = Math.floor(totalSec / 60);
+    const secs = Math.round(totalSec % 60);
+    if (mins < 60) return `${mins}m ${secs}s`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ${mins % 60}m`;
+  };
+
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m.toString().padStart(2, '0')}m (${hours.toFixed(1)} hrs)`;
+  };
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-4">
@@ -380,6 +417,81 @@ export default function DirectCommsPage() {
             </div>
           </section>
 
+          {/* Card 2B: Rover Sunlight, Power Generation, Endurance & Comms Time */}
+          <section className="card space-y-3 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+                <Zap className="size-4 text-warning" /> Rover Power &amp; Earth Comms Time
+              </h2>
+              <span
+                className={`badge ${
+                  frame.netPowerW >= 0
+                    ? 'border-success/60 bg-success/15 text-success'
+                    : 'border-warning/60 bg-warning/15 text-warning'
+                }`}
+              >
+                <BatteryCharging className="mr-1 size-3" />
+                {frame.netPowerW >= 0 ? 'CHARGING / SUSTAINED' : 'BATTERY DRAIN'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">SUNLIGHT → SOLAR GEN</div>
+                <div className="mt-0.5 text-sm font-bold text-warning">
+                  {frame.solarGeneratedW} W{' '}
+                  <span className="text-[11px] font-normal text-fg-muted">({frame.sunlightReceivingPct}%)</span>
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  {frame.solarIrradianceWm2} W/m² on 1.35m² GaAs array
+                </div>
+              </div>
+
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">ROVER LOAD / NET</div>
+                <div className="mt-0.5 text-sm font-bold text-fg">
+                  {frame.totalLoadW} W{' '}
+                  <span className={frame.netPowerW >= 0 ? 'text-success' : 'text-danger'}>
+                    ({frame.netPowerW >= 0 ? `+${frame.netPowerW}` : frame.netPowerW} W)
+                  </span>
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  Avionics {frame.baseRoverLoadW}W + TX {frame.txPowerDrawW}W
+                </div>
+              </div>
+
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">POWER LASTS (1.8 kWh)</div>
+                <div
+                  className={`mt-0.5 text-sm font-bold ${
+                    frame.powerLastsHours === null ? 'text-success' : 'text-warning'
+                  }`}
+                >
+                  {frame.powerLastsHours === null ? 'Sustained (Sunlit)' : formatHours(frame.powerLastsHours)}
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  {frame.hoursToFullCharge !== null
+                    ? `${frame.batteryRemainingWh} Wh • Full in ${frame.hoursToFullCharge}h`
+                    : `${frame.batteryRemainingWh} Wh (${batterySocPct}% SoC)`}
+                </div>
+              </div>
+
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="flex items-center gap-1 text-[10px] text-fg-dim">
+                  <Clock className="size-3 text-cyan" /> TIME TO SEND ({payloadMb} MB)
+                </div>
+                <div className={`mt-0.5 text-sm font-bold ${frame.linkUp ? 'text-cyan' : 'text-danger'}`}>
+                  {frame.txDurationSec !== null ? formatDuration(frame.txDurationSec) : 'Blocked (No Link)'}
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  {frame.txEnergyWh !== null
+                    ? `${frame.txEnergyWh} Wh energy @ ${frame.effectiveGoodputMbps} Mbps`
+                    : 'Waiting for Earth LOS'}
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Card 3: Lunar Site & Direct RF Configuration */}
           <section className="card space-y-3 p-4">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
@@ -440,6 +552,39 @@ export default function DirectCommsPage() {
                 className="w-36 accent-cyan cursor-pointer"
               />
             </label>
+
+            <label className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-fg-muted">Battery SoC ({batterySocPct}%)</span>
+              <input
+                type="range"
+                min={10}
+                max={100}
+                step={5}
+                value={batterySocPct}
+                onChange={(e) => setBatterySocPct(Number(e.target.value))}
+                className="w-36 accent-warning cursor-pointer"
+              />
+            </label>
+
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-fg-muted">Payload Size</span>
+              <div className="flex gap-1">
+                {[50, 250, 1000, 5000].map((mb) => (
+                  <button
+                    key={mb}
+                    type="button"
+                    onClick={() => setPayloadMb(mb)}
+                    className={`rounded border px-1.5 py-0.5 font-mono text-[10px] cursor-pointer ${
+                      payloadMb === mb
+                        ? 'border-cyan bg-cyan/15 text-cyan font-bold'
+                        : 'border-line bg-bg/60 text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    {mb >= 1000 ? `${mb / 1000} GB` : `${mb} MB`}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
