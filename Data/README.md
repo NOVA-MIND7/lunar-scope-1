@@ -136,24 +136,6 @@ python3 Data/get_earth_data.py
 
 These scripts perform individual test requests and save the raw Horizons responses in the `raw/` directory.
 
-## Application in the Lunar Landing Site Navigator
-
-The collected ephemeris data is intended to support the following scientific calculations:
-
-**Sunlight Analysis**
-
-Solar elevation can be used to estimate whether the Sun is geometrically above the local horizon.
-
-**Earth Visibility Analysis**
-
-Earth elevation can help identify periods when Earth may be visible from the landing location.
-
-**Mission Scenario Comparison**
-
-Different landing dates and times can be compared using their calculated sunlight conditions and Earth visibility windows.
-
-**Important scientific limitation:** Geometric visibility does not guarantee a functioning communication link. Actual communication also depends on terrain obstruction, antenna orientation, radio frequency, power, and link budget.
-
 ## References
 
 1. NASA JPL Horizons System – https://ssd.jpl.nasa.gov/horizons/
