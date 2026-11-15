@@ -1,12 +1,20 @@
 # LUNAR SCOPE
 
-Lunar landing-site intelligence and mission-planning platform — NASA Space Apps Challenge 2026.
+Lunar landing-site intelligence and mission-planning platform for NASA Space Apps Challenge 2026.
 
-**Status: Phase 3 (interactive 3D Lunar Explorer).** Mission-control UI and the 3D Moon (rotate, zoom, pan, click or
-type coordinates, markers, South Pole mode) are working. The scientific modules (sun position, illumination, Earth
-visibility, terrain horizon, comparison, recommendations) are still documented interfaces that return **HTTP 501**; no
-results are invented. The Moon uses a labelled procedural surface until you add NASA textures (see
-`frontend/public/textures/README.md`).
+## Repository overview
+
+This repository combines a TypeScript-first web application with Python scientific processing modules. The project is designed to support lunar mission planning, terrain analysis, and interactive exploration of landing-site conditions for a future lunar mission.
+
+### Language composition
+
+- TypeScript: 90.2%
+- Python: 8.7%
+- Other: 1.1%
+
+This mix reflects the main frontend experience and simulation tooling, while Python is used for data processing, scientific calculations, and backend services.
+
+**Status: Phase 3 (interactive 3D Lunar Explorer).** Mission-control UI and the 3D Moon (rotate, zoom, pan, click or type coordinates, markers, South Pole mode) are working. The scientific modules (sun position, illumination, Earth visibility, terrain horizon, comparison, recommendations) are still documented interfaces that return **HTTP 501**; no results are invented. The Moon uses a labelled procedural surface until you add NASA textures (see `frontend/public/textures/README.md`).
 
 ## Stack
 
