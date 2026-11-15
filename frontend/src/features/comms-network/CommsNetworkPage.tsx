@@ -32,6 +32,40 @@ import { CommsScene3D, type CommsCameraFocus } from './CommsScene3D';
 
 type ConfigTab = 'rover' | 'satellites' | 'dishes';
 
+function formatDurationSec(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '--';
+  if (seconds < 60) return `${seconds.toFixed(1)} s`;
+  if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}m ${secs}s`;
+  }
+  const hrs = seconds / 3600;
+  if (hrs < 24) return `${hrs.toFixed(2)} hrs`;
+  const days = Math.floor(hrs / 24);
+  const remHrs = hrs % 24;
+  return `${days}d ${remHrs.toFixed(1)}h`;
+}
+
+function formatMissionHours(hours: number): string {
+  if (!Number.isFinite(hours) || hours < 0) return '--';
+  if (hours < 0.1) return `${hours.toFixed(3)} hrs`;
+  if (hours < 24) return `${hours.toFixed(1)} hrs`;
+  const days = hours / 24;
+  return `${days.toFixed(1)} d (${hours.toFixed(0)} hrs)`;
+}
+
+function formatUtcArrival(hoursFromNow: number): string {
+  if (!Number.isFinite(hoursFromNow)) return 'No LOS Window';
+  const target = new Date(Date.now() + hoursFromNow * 3_600_000);
+  const yyyy = target.getUTCFullYear();
+  const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(target.getUTCDate()).padStart(2, '0');
+  const hh = String(target.getUTCHours()).padStart(2, '0');
+  const mi = String(target.getUTCMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd} ${hh}:${mi} UTC`;
+}
+
 /** Controlled numeric input that lets users clear or type '-' / decimals smoothly. */
 function NumericField({
   value,
@@ -143,9 +177,17 @@ export default function CommsNetworkPage() {
 
   // Payload transmission tracker
   const [deliveredMb, setDeliveredMb] = useState(0);
+  const [burstStartSimSec, setBurstStartSimSec] = useState(0);
+  const [burstEndSimSec, setBurstEndSimSec] = useState<number | null>(null);
+  const [activeTxSec, setActiveTxSec] = useState(0);
+  const [completedUtcStr, setCompletedUtcStr] = useState<string | null>(null);
   const [eventLog, setEventLog] = useState<string[]>([
     '[T+0.0s] Cislunar network ready. Press Play to start orbital motion & live packet flow.',
   ]);
+  const deliveredMbRef = useRef(0);
+  const burstStartSimSecRef = useRef(0);
+  const burstEndSimSecRef = useRef<number | null>(null);
+  const activeTxSecRef = useRef(0);
   const lastSampleTimeRef = useRef(0);
   const lastRouteKeyRef = useRef('');
 
@@ -160,19 +202,27 @@ export default function CommsNetworkPage() {
       const dt = Math.max(0, nextFrame.simTimeSec - lastSampleTimeRef.current);
       lastSampleTimeRef.current = nextFrame.simTimeSec;
 
-      if (dt > 0 && nextFrame.linkUp) {
-        // Convert Mbps * accelerated demo time cleanly so payload bar visibly progresses during demo
+      if (dt > 0 && nextFrame.linkUp && deliveredMbRef.current < config.payloadMb) {
         const mbPerSimSec = Math.max(0.8, nextFrame.effectiveRateMbps / 8);
-        setDeliveredMb((prev) => {
-          if (prev >= config.payloadMb) return config.payloadMb;
-          const next = Math.min(config.payloadMb, prev + mbPerSimSec * dt);
-          if (prev < config.payloadMb && next >= config.payloadMb) {
-            appendLog(
-              `[T+${nextFrame.simTimeSec.toFixed(1)}s] Payload transfer complete (${config.payloadMb} MB received via ${nextFrame.dsnDishes.find((d) => d.active)?.label ?? 'DSN'}).`,
-            );
-          }
-          return next;
-        });
+        const prevMb = deliveredMbRef.current;
+        const nextMb = Math.min(config.payloadMb, prevMb + mbPerSimSec * dt);
+        const nextTxSec = activeTxSecRef.current + dt;
+
+        deliveredMbRef.current = nextMb;
+        activeTxSecRef.current = nextTxSec;
+        setDeliveredMb(nextMb);
+        setActiveTxSec(nextTxSec);
+
+        if (prevMb < config.payloadMb && nextMb >= config.payloadMb && burstEndSimSecRef.current === null) {
+          const totalTaken = Math.max(0, nextFrame.simTimeSec - burstStartSimSecRef.current);
+          const nowStr = formatUtcArrival(0);
+          burstEndSimSecRef.current = nextFrame.simTimeSec;
+          setBurstEndSimSec(nextFrame.simTimeSec);
+          setCompletedUtcStr(nowStr);
+          appendLog(
+            `[T+${nextFrame.simTimeSec.toFixed(1)}s] Complete: ${config.payloadMb} MB sent in ${totalTaken.toFixed(1)}s total (${nextTxSec.toFixed(1)}s active TX) via ${nextFrame.dsnDishes.find((d) => d.active)?.label ?? 'DSN'}.`,
+          );
+        }
       }
 
       if (nextFrame.routePathText !== lastRouteKeyRef.current) {
@@ -190,23 +240,112 @@ export default function CommsNetworkPage() {
     simTimeRef.current = 0;
     lastSampleTimeRef.current = 0;
     lastRouteKeyRef.current = '';
+    deliveredMbRef.current = 0;
+    burstStartSimSecRef.current = 0;
+    burstEndSimSecRef.current = null;
+    activeTxSecRef.current = 0;
     setDeliveredMb(0);
+    setBurstStartSimSec(0);
+    setBurstEndSimSec(null);
+    setActiveTxSec(0);
+    setCompletedUtcStr(null);
     const resetFrame = stepCommsFrame(config, 0);
     setFrame(resetFrame);
     setEventLog(['[T+0.0s] Simulation reset. Press Play to begin telemetry transmission.']);
   };
 
   const handleSendBurst = () => {
+    const startSec = frame.simTimeSec;
+    deliveredMbRef.current = 0;
+    burstStartSimSecRef.current = startSec;
+    burstEndSimSecRef.current = null;
+    activeTxSecRef.current = 0;
     setDeliveredMb(0);
+    setBurstStartSimSec(startSec);
+    setBurstEndSimSec(null);
+    setActiveTxSec(0);
+    setCompletedUtcStr(null);
     setPacketBurstTick((t) => t + 1);
     if (!isPlaying) setIsPlaying(true);
-    appendLog(`[T+${frame.simTimeSec.toFixed(1)}s] Initiated ${config.payloadMb} MB telemetry burst from ${config.roverName}.`);
+    appendLog(`[T+${startSec.toFixed(1)}s] Initiated ${config.payloadMb} MB telemetry burst from ${config.roverName}.`);
   };
+
+  // If user increases payload size above already-delivered amount, resume timing cleanly
+  useEffect(() => {
+    if (deliveredMbRef.current >= config.payloadMb && burstEndSimSecRef.current === null && config.payloadMb > 0) {
+      deliveredMbRef.current = config.payloadMb;
+    } else if (deliveredMbRef.current < config.payloadMb && burstEndSimSecRef.current !== null) {
+      burstEndSimSecRef.current = null;
+      setBurstEndSimSec(null);
+      setCompletedUtcStr(null);
+    }
+  }, [config.payloadMb]);
 
   const progressPct = useMemo(
     () => (config.payloadMb > 0 ? Math.min(100, Math.round((deliveredMb / config.payloadMb) * 100)) : 0),
     [deliveredMb, config.payloadMb],
   );
+
+  // Steady baseline schedule computed purely from network config (never flickers frame-to-frame)
+  const orbitalPlan = useMemo(() => {
+    const spec = BAND_SPECS[config.band];
+    const powerBoostDb = 10 * Math.log10(Math.max(5, config.txPowerWatts) / 25);
+    const rateScale = Math.max(0.35, Math.min(1.6, 0.7 + powerBoostDb * 0.12));
+    const nominalDirectMbps = Number((spec.baseRateMbps * rateScale * 0.78).toFixed(1));
+    const nominalMbPerSec = Math.max(0.8, nominalDirectMbps / 8);
+    const nominalDelaySec = Number((1.282 + spec.hopOverheadMs / 1000).toFixed(2));
+
+    // Deterministic high-resolution scan across one full 24h Earth rotation cycle (120 samples from t = 0)
+    const cycleSimSec = (Math.PI * 2) / 0.16;
+    const hoursPerSimSec = 24 / cycleSimSec;
+    const scanSamples = 120;
+    let visibleCount = 0;
+    let rateSum = 0;
+    let firstClearStep: number | null = null;
+
+    for (let i = 0; i < scanSamples; i++) {
+      const sample = stepCommsFrame(config, (i / scanSamples) * cycleSimSec);
+      if (sample.linkUp) {
+        visibleCount++;
+        rateSum += Math.max(0.8, sample.effectiveRateMbps / 8);
+        if (firstClearStep === null) firstClearStep = i;
+      }
+    }
+
+    const avgActiveMbPerSec = visibleCount > 0 ? rateSum / visibleCount : nominalMbPerSec;
+    const activeRfFullSec = config.payloadMb / avgActiveMbPerSec + nominalDelaySec;
+    const losAvailabilityPct = Math.round((visibleCount / scanSamples) * 100);
+
+    let missionTotalHours: number | null = null;
+    let initialWaitHours = 0;
+    if (visibleCount > 0) {
+      const dutyFraction = visibleCount / scanSamples;
+      initialWaitHours = firstClearStep !== null ? (firstClearStep / scanSamples) * cycleSimSec * hoursPerSimSec : 0;
+      missionTotalHours = activeRfFullSec / 3600 / dutyFraction + initialWaitHours;
+    }
+
+    const steadyArrivalUtc =
+      missionTotalHours !== null ? formatUtcArrival(missionTotalHours) : 'Blocked (No LOS)';
+
+    return {
+      nominalMbPerSec,
+      avgActiveMbPerSec,
+      activeRfFullSec,
+      losAvailabilityPct,
+      initialWaitHours,
+      missionTotalHours,
+      steadyArrivalUtc,
+      hoursPerSimSec,
+    };
+  }, [config]);
+
+  // Monotonic elapsed time & completion tracking for the current/latest message burst
+  const elapsedTotalSec =
+    burstEndSimSec !== null
+      ? Math.max(0, burstEndSimSec - burstStartSimSec)
+      : Math.max(0, frame.simTimeSec - burstStartSimSec);
+  const dtWaitSec = Math.max(0, elapsedTotalSec - activeTxSec);
+  const isComplete = deliveredMb >= config.payloadMb && config.payloadMb > 0;
 
   // Derive 4-tier visual status for the hop pipeline strip
   const activeLunarSat = frame.lunarSats.find((s) => s.active);
@@ -477,6 +616,14 @@ export default function CommsNetworkPage() {
                     {deliveredMb.toFixed(1)} / {config.payloadMb} MB
                   </strong>{' '}
                   ({progressPct}%)
+                  <span className="ml-2 text-cyan">
+                    •{' '}
+                    {isComplete
+                      ? `Sent in ${formatDurationSec(elapsedTotalSec)} (${activeTxSec.toFixed(1)}s TX${dtWaitSec > 0.2 ? ` + ${dtWaitSec.toFixed(1)}s LOS wait` : ''}) • Est. Mission Window: ${orbitalPlan.missionTotalHours !== null ? formatMissionHours(orbitalPlan.missionTotalHours) : 'LOS Blocked'}${completedUtcStr ? ` • Done ${completedUtcStr}` : ''}`
+                      : elapsedTotalSec > 0 || isPlaying
+                        ? `Elapsed: ${formatDurationSec(elapsedTotalSec)} (${activeTxSec.toFixed(1)}s TX) • Est. Full: ${orbitalPlan.missionTotalHours !== null ? `${formatMissionHours(orbitalPlan.missionTotalHours)} (${orbitalPlan.losAvailabilityPct}% LOS)` : 'Blocked'}`
+                        : `Est. Full Delivery: ${orbitalPlan.missionTotalHours !== null ? `${formatMissionHours(orbitalPlan.missionTotalHours)} • ${orbitalPlan.steadyArrivalUtc} (${orbitalPlan.losAvailabilityPct}% LOS)` : 'Blocked (0% LOS over 24h)'}`}
+                  </span>
                 </span>
                 <span className={frame.linkUp ? 'text-success' : 'text-warning'}>
                   {frame.statusDetail}
@@ -609,7 +756,7 @@ export default function CommsNetworkPage() {
                       ariaLabel="Payload Size MB"
                       value={config.payloadMb}
                       min={10}
-                      max={2000}
+                      max={500000}
                       integer
                       onCommit={(v) => {
                         setConfig((p) => ({ ...p, payloadMb: v }));
@@ -847,9 +994,9 @@ export default function CommsNetworkPage() {
               <Activity className="size-4 text-cyan" /> Link Telemetry & Event Log
             </h3>
 
-            <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+            <div className="grid grid-cols-2 gap-2 font-mono text-xs sm:grid-cols-4">
               <div className="rounded border border-line bg-bg/60 p-2">
-                <div className="text-[10px] text-fg-dim">TOTAL DELAY</div>
+                <div className="text-[10px] text-fg-dim">SIGNAL DELAY</div>
                 <div className="mt-0.5 text-sm font-bold text-cyan">{frame.totalDelaySec} s</div>
               </div>
               <div className="rounded border border-line bg-bg/60 p-2">
@@ -859,6 +1006,27 @@ export default function CommsNetworkPage() {
               <div className="rounded border border-line bg-bg/60 p-2">
                 <div className="text-[10px] text-fg-dim">MIN SNR</div>
                 <div className="mt-0.5 text-sm font-bold text-warning">{frame.minSnrDb} dB</div>
+              </div>
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">
+                  {isComplete ? 'TIME TAKEN' : elapsedTotalSec > 0 ? 'ELAPSED / EST. FULL' : 'EST. FULL DELIVERY'}
+                </div>
+                <div className="mt-0.5 text-sm font-bold text-fg">
+                  {isComplete
+                    ? formatDurationSec(elapsedTotalSec)
+                    : elapsedTotalSec > 0
+                      ? formatDurationSec(elapsedTotalSec)
+                      : orbitalPlan.missionTotalHours !== null
+                        ? formatMissionHours(orbitalPlan.missionTotalHours)
+                        : 'Blocked'}
+                </div>
+                <div className="text-[9px] text-fg-dim">
+                  {isComplete
+                    ? `Active TX ${activeTxSec.toFixed(1)}s • ${completedUtcStr ?? orbitalPlan.steadyArrivalUtc}`
+                    : orbitalPlan.missionTotalHours !== null
+                      ? `Est. ${formatMissionHours(orbitalPlan.missionTotalHours)} • ${orbitalPlan.losAvailabilityPct}% LOS`
+                      : '0% Earth LOS (Needs Relay)'}
+                </div>
               </div>
             </div>
 

@@ -13,6 +13,7 @@ const SiteNavigatorPage = lazy(() => import('@/features/site-navigator/SiteNavig
 const SolarAnalysisPage = lazy(() => import('@/features/solar-analysis/SolarAnalysisPage'));
 const EarthVisibilityPage = lazy(() => import('@/features/earth-visibility/EarthVisibilityPage'));
 const CommsNetworkPage = lazy(() => import('@/features/comms-network/CommsNetworkPage'));
+const DirectCommsPage = lazy(() => import('@/features/direct-comms/DirectCommsPage'));
 const MissionTimelinePage = lazy(() => import('@/features/mission-timeline/MissionTimelinePage'));
 const SiteComparisonPage = lazy(() => import('@/features/site-comparison/SiteComparisonPage'));
 const TerrainAnalysisPage = lazy(() => import('@/features/terrain-analysis/TerrainAnalysisPage'));
@@ -33,6 +34,7 @@ export const routeObjects: RouteObject[] = [
       { path: '/solar', element: <SolarAnalysisPage /> },
       { path: '/earth', element: <EarthVisibilityPage /> },
       { path: '/comms', element: <CommsNetworkPage /> },
+      { path: '/direct-comms', element: <DirectCommsPage /> },
       { path: '/timeline', element: <MissionTimelinePage /> },
       { path: '/compare', element: <SiteComparisonPage /> },
       { path: '/terrain', element: <TerrainAnalysisPage /> },
