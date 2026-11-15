@@ -74,6 +74,8 @@ export default function DirectCommsPage() {
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speedHoursPerSec, setSpeedHoursPerSec] = useState<number>(12);
+  const [batterySyncOrbital, setBatterySyncOrbital] = useState<boolean>(false);
+  const [resetNonce, setResetNonce] = useState<number>(0);
   const [showLabels, setShowLabels] = useState<boolean>(true);
   const [cameraRequest, setCameraRequest] = useState<{ id: number; target: DirectCameraPreset }>({
     id: 0,
@@ -131,6 +133,7 @@ export default function DirectCommsPage() {
     simHoursRef.current = 0;
     simSocRef.current = 62;
     setBatterySocPct(62);
+    setResetNonce((n) => n + 1);
     setSynodicHours(0);
     setCameraRequest((p) => ({ id: p.id + 1, target: 'overview' }));
   };
@@ -219,6 +222,20 @@ export default function DirectCommsPage() {
                 </button>
               ))}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setBatterySyncOrbital((v) => !v)}
+              title="Toggle whether Battery SoC runs in 1x real time or fast-forwards with Orbital Sun Speed"
+              className={`rounded border px-2.5 py-1 font-mono text-[11px] font-medium transition cursor-pointer ${
+                batterySyncOrbital
+                  ? 'border-warning/60 bg-warning/15 text-warning'
+                  : 'border-success/50 bg-success/10 text-success'
+              }`}
+            >
+              <BatteryCharging className="mr-1 inline size-3.5" />
+              {batterySyncOrbital ? 'Battery: Fast Sync' : 'Battery: Real-Time (1x)'}
+            </button>
           </div>
 
           {/* Quick Scenario Jumps */}
@@ -277,6 +294,8 @@ export default function DirectCommsPage() {
             config={config}
             isPlaying={isPlaying}
             speedHoursPerSec={speedHoursPerSec}
+            batterySyncOrbital={batterySyncOrbital}
+            resetNonce={resetNonce}
             simHoursRef={simHoursRef}
             simSocRef={simSocRef}
             showLabels={showLabels}
@@ -449,17 +468,17 @@ export default function DirectCommsPage() {
               </span>
             </div>
 
-            {/* Live Solar -> Battery Charging Visual Progress Bar */}
+            {/* Live Solar -> Battery Charging / Drain Visual Progress Bar */}
             <div className="rounded border border-line bg-bg/70 p-2.5">
               <div className="mb-1.5 flex items-center justify-between font-mono text-[11px]">
                 <span className="flex items-center gap-1.5 text-fg-muted">
                   <Sun className={`size-3.5 ${frame.solarGeneratedW > 0 ? 'text-warning' : 'text-fg-dim'}`} />
                   {frame.solarGeneratedW > 0
                     ? `Solar (${frame.solarGeneratedW}W) ➔ Battery`
-                    : 'Shadowed — On Battery'}
+                    : `Shadowed — Battery ➔ ${frame.linkUp ? 'Earth Comms' : 'Survival'} (${(frame.netPowerW / 3600).toFixed(2)} Wh/s)`}
                 </span>
-                <span className={frame.isCharging ? 'font-bold text-success' : 'font-bold text-fg'}>
-                  {Math.round(frame.batterySocPct)}% ({frame.batteryRemainingWh} / {batteryCapacityWh} Wh)
+                <span className={frame.isCharging ? 'font-bold text-success' : frame.netPowerW < 0 ? 'font-bold text-warning' : 'font-bold text-fg'}>
+                  {frame.batterySocPct.toFixed(2)}% ({frame.batteryRemainingWh.toFixed(2)} / {batteryCapacityWh} Wh)
                 </span>
               </div>
               <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-bg-secondary">
@@ -471,7 +490,7 @@ export default function DirectCommsPage() {
                         ? 'bg-danger'
                         : 'bg-warning'
                   }`}
-                  style={{ width: `${Math.round(frame.batterySocPct)}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, frame.batterySocPct))}%` }}
                 />
               </div>
             </div>
