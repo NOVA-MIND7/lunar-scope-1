@@ -37,30 +37,32 @@ function LunarTerrain() {
     for (let index = 0; index < position.count; index += 1) {
       const x = position.getX(index);
       const y = position.getY(index);
-      const rolling = Math.sin(x * 1.1) * 0.08 + Math.cos(y * 1.6) * 0.06;
-      const ridge = Math.exp(-((x + 1.6) ** 2 + (y - 0.4) ** 2) * 0.7) * 0.28;
-      position.setZ(index, rolling + ridge);
+      const rolling = Math.sin(x * 1.1) * 0.12 + Math.cos(y * 1.6) * 0.1 + Math.sin((x + y) * 3.7) * 0.035;
+      const ridge = Math.exp(-((x + 1.6) ** 2 + (y - 0.4) ** 2) * 0.7) * 0.34;
+      const craterA = Math.exp(-((x - 1.8) ** 2 + (y + 0.9) ** 2) * 2.5) * -0.28;
+      const craterB = Math.exp(-((x + 2.3) ** 2 + (y - 1.1) ** 2) * 3.2) * -0.22;
+      position.setZ(index, rolling + ridge + craterA + craterB);
     }
     position.needsUpdate = true;
     result.computeVertexNormals();
     return result;
   }, []);
-  return <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, -0.6]} receiveShadow><meshStandardMaterial color="#665e56" roughness={1} /></mesh>;
+  return <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, -0.6]} receiveShadow><meshStandardMaterial color="#77736d" roughness={1} flatShading /></mesh>;
 }
 
 function Craters() {
-  const craters = [[-2.2, -1.5, 0.42], [1.6, -1.2, 0.3], [2.7, 0.35, 0.5], [-1.1, 1.2, 0.25]] as const;
-  return <>{craters.map(([x, z, radius], index) => <mesh key={index} position={[x, 0.01, z - 0.6]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[radius * 0.62, radius, 32]} /><meshBasicMaterial color="#3f3a36" transparent opacity={0.7} /></mesh>)}</>;
+  const craters = [[-2.2, -1.5, 0.42], [1.6, -1.2, 0.3], [2.7, 0.35, 0.5], [-1.1, 1.2, 0.25], [0.4, -0.2, 0.18], [-3.1, 0.7, 0.28]] as const;
+  return <>{craters.map(([x, z, radius], index) => <mesh key={index} position={[x, 0.01, z - 0.6]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[radius * 0.62, radius, 32]} /><meshBasicMaterial color="#292827" transparent opacity={0.82} /></mesh>)}</>;
 }
 
 function Lander({ position }: { position: [number, number, number] }) {
   const { scene } = useGLTF('/models/lander.glb');
-  return <group position={position}><primitive object={scene.clone()} scale={0.025} /><Html distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-[10px] text-yellow-200">Apollo lunar lander</span></Html></group>;
+  return <group position={position}><primitive object={scene.clone()} scale={0.080} /><Html distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-[10px] text-yellow-200"> Lander</span></Html></group>;
 }
 
 function EarthModel({ position }: { position: [number, number, number] }) {
   const { scene } = useGLTF('/models/earth.glb');
-  return <primitive object={scene.clone()} position={position} scale={0.00018} />;
+  return <primitive object={scene.clone()} position={position} scale={0.00100} />;
 }
 
 function MoonPerspectiveScene({ earthPosition, elevation, azimuth, visible }: { earthPosition: [number, number, number]; elevation: number; azimuth: number; visible: boolean }) {
@@ -70,7 +72,7 @@ function MoonPerspectiveScene({ earthPosition, elevation, azimuth, visible }: { 
     <LunarTerrain /><Craters /><Lander position={lander} /><EarthModel position={earthPosition} />
     <Line points={[new Vector3(...lander), new Vector3(...earthPosition)]} color={visible ? '#22c55e' : '#ef4444'} lineWidth={2} dashed dashSize={0.08} gapSize={0.06} />
     <Html position={earthPosition} distanceFactor={6} center style={{ pointerEvents: 'none' }}><span className="whitespace-nowrap rounded bg-slate-950/85 px-2 py-1 text-[10px] text-cyan-200">Earth · Elev {elevation.toFixed(1)}° · Az {azimuth.toFixed(0)}°</span></Html>
-    <OrbitControls enablePan={false} minDistance={2} maxDistance={8} target={[0, 0.55, -1]} />
+    <OrbitControls enablePan={false} minDistance={4} maxDistance={14} target={[0, 0.7, -1.4]} />
   </>;
 }
 
@@ -106,7 +108,7 @@ export function MoonEarthVisibilityAnalysis() {
         <div className="grid grid-cols-2 gap-2"><label className="text-xs text-muted">Lander height (m)<input className="mt-1 w-full rounded border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-fg" type="number" min={0} value={observerHeight} onChange={event => setObserverHeight(Number(event.target.value))} /></label><label className="text-xs text-muted">Terrain mask (°)<input className="mt-1 w-full rounded border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-fg" type="number" min={0} step={0.5} value={terrainMask} onChange={event => setTerrainMask(Number(event.target.value))} /></label></div>
         <div className="rounded-lg border border-white/10 bg-slate-900/70 p-3 text-xs text-muted">Generated local lunar terrain with crater markers. Connect a lunar DEM later for measured terrain obstruction.</div>
       </div>
-      <div className="relative h-[min(560px,65vh)] min-h-[400px] overflow-hidden rounded-xl border border-cyan-300/20 bg-[#020617]"><Canvas camera={{ position: [0, 1.4, 4.8], fov: 42 }} dpr={[1, 2]}><MoonPerspectiveScene earthPosition={earthPosition} elevation={direction.elevation} azimuth={direction.azimuth} visible={visible} /></Canvas><div className="pointer-events-none absolute left-3 top-3 rounded border border-white/10 bg-slate-950/80 px-3 py-2 text-xs text-slate-200">Lunar lander viewpoint · generated Moon surface</div></div>
+      <div className="relative h-[min(560px,65vh)] min-h-[400px] overflow-hidden rounded-xl border border-cyan-300/20 bg-[#020617]"><Canvas camera={{ position: [0, 1.8, 8], fov: 48 }} dpr={[1, 2]}><MoonPerspectiveScene earthPosition={earthPosition} elevation={direction.elevation} azimuth={direction.azimuth} visible={visible} /></Canvas><div className="pointer-events-none absolute left-3 top-3 rounded border border-white/10 bg-slate-950/80 px-3 py-2 text-xs text-slate-200">Lunar lander viewpoint · generated Moon surface</div></div>
     </section>
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric label="Earth elevation" value={`${direction.elevation.toFixed(1)}°`} good={visible} /><Metric label="Earth azimuth" value={`${direction.azimuth.toFixed(0)}°`} /><Metric label="Visibility" value={visible ? 'DIRECT' : 'BLOCKED'} good={visible} /><Metric label="One-way light time" value={`${(EARTH_MOON_DISTANCE_KM / C_KM_S).toFixed(3)} s`} /></section>
     <section className="rounded-2xl border border-white/10 bg-slate-950/50 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-semibold text-fg">24-hour communication timeline</h3><p className="text-xs text-muted">Green means Earth is above the configured terrain mask.</p></div><div className="text-xs text-muted">Observer height: {observerHeight} m · Analysis time: +{timeOffset.toFixed(1)} h</div></div><div className="mt-4 grid grid-cols-24 gap-1">{timeline.map((isVisible, hour) => <div key={hour} className={`h-7 rounded-sm ${isVisible ? 'bg-emerald-500' : 'bg-rose-500/70'}`} title={`${hour}:00 UTC · ${isVisible ? 'Visible' : 'Blocked'}`} />)}</div><input className="mt-4 w-full accent-cyan-400" type="range" min={0} max={24} step={0.5} value={timeOffset} onChange={event => setTimeOffset(Number(event.target.value))} /><div className="mt-1 flex justify-between text-[11px] text-muted"><span>Now</span><span>+12 hours</span><span>+24 hours</span></div></section>
