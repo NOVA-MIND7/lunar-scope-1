@@ -15,20 +15,13 @@ import {
   type SolarSiteProfile,
 } from './solarPhysics';
 
-export type GlobePickTarget = 'A' | 'B';
-export type GlobeSimViewMode = 'ORBITAL' | 'TERRAIN_A' | 'TERRAIN_B';
+export type GlobeSimViewMode = 'ORBITAL' | 'TERRAIN';
 
 interface SolarGlobeSimProps {
-  siteA: SolarSiteProfile;
-  siteB: SolarSiteProfile;
-  pointA: SolarEphemerisPoint;
-  pointB: SolarEphemerisPoint;
-  pickTarget: GlobePickTarget;
-  onPickTargetChange: (target: GlobePickTarget) => void;
-  autoAdvancePick: boolean;
-  onToggleAutoAdvance: () => void;
-  onPickCoordinates: (target: GlobePickTarget, lat: number, lon: number) => void;
-  onSelectPresetSite: (target: GlobePickTarget, siteId: string) => void;
+  site: SolarSiteProfile;
+  point: SolarEphemerisPoint;
+  onPickCoordinates: (lat: number, lon: number) => void;
+  onSelectPresetSite: (siteId: string) => void;
   useTerrainHorizon: boolean;
 }
 
@@ -122,13 +115,11 @@ function FrontLabel({
 
 function SiteBeacon({
   site,
-  badge,
   color,
   isSunlit,
   labelsVisible,
 }: {
   site: SolarSiteProfile;
-  badge: 'A' | 'B';
   color: string;
   isSunlit: boolean;
   labelsVisible: boolean;
@@ -163,67 +154,28 @@ function SiteBeacon({
       <FrontLabel
         position={labelPos}
         visible={labelsVisible}
-        className={
-          badge === 'A'
-            ? 'border-cyan/70 bg-bg/90 text-cyan'
-            : 'border-warning/70 bg-bg/90 text-warning'
-        }
+        className="border-cyan/70 bg-bg/90 text-cyan"
       >
-        {badge}: {site.lat.toFixed(1)}°, {site.lon.toFixed(1)}° {isSunlit ? '☀' : '☾'}
+        {site.lat.toFixed(1)}°, {site.lon.toFixed(1)}° {isSunlit ? '☀' : '☾'}
       </FrontLabel>
     </group>
   );
 }
 
-function GreatCircleArc({ siteA, siteB }: { siteA: SolarSiteProfile; siteB: SolarSiteProfile }) {
-  const points = useMemo(() => {
-    const va = latLonToVector3(siteA.lat, siteA.lon, 1).normalize();
-    const vb = latLonToVector3(siteB.lat, siteB.lon, 1).normalize();
-    const dot = Math.max(-1, Math.min(1, va.dot(vb)));
-    const omega = Math.acos(dot);
-    const steps = 48;
-    const pts: [number, number, number][] = [];
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      let v: THREE.Vector3;
-      if (omega < 0.001) {
-        v = va.clone();
-      } else {
-        const sinOmega = Math.sin(omega);
-        v = va
-          .clone()
-          .multiplyScalar(Math.sin((1 - t) * omega) / sinOmega)
-          .add(vb.clone().multiplyScalar(Math.sin(t * omega) / sinOmega));
-      }
-      v.normalize().multiplyScalar(1.012);
-      pts.push([v.x, v.y, v.z]);
-    }
-    return pts;
-  }, [siteA.lat, siteA.lon, siteB.lat, siteB.lon]);
-
-  return <Line points={points} color="#38bdf8" lineWidth={1.5} dashed dashSize={0.04} gapSize={0.025} />;
-}
-
 function OrbitalMoonScene({
   active,
-  siteA,
-  siteB,
-  pointA,
-  pointB,
-  pickTarget,
+  site,
+  point,
   onPickCoordinates,
   onSelectPresetSite,
   onHoverCoords,
   focusPreset,
 }: {
   active: boolean;
-  siteA: SolarSiteProfile;
-  siteB: SolarSiteProfile;
-  pointA: SolarEphemerisPoint;
-  pointB: SolarEphemerisPoint;
-  pickTarget: GlobePickTarget;
-  onPickCoordinates: (target: GlobePickTarget, lat: number, lon: number) => void;
-  onSelectPresetSite: (target: GlobePickTarget, siteId: string) => void;
+  site: SolarSiteProfile;
+  point: SolarEphemerisPoint;
+  onPickCoordinates: (lat: number, lon: number) => void;
+  onSelectPresetSite: (siteId: string) => void;
   onHoverCoords: (coords: { lat: number; lon: number } | null) => void;
   focusPreset: CameraFocusPreset | null;
 }) {
@@ -241,8 +193,8 @@ function OrbitalMoonScene({
   }, [active, focusPreset, camera]);
 
   const sunVec = useMemo(
-    () => latLonToVector3(pointA.subSolarLatDeg, pointA.subSolarLonDeg, 6.5),
-    [pointA.subSolarLatDeg, pointA.subSolarLonDeg],
+    () => latLonToVector3(point.subSolarLatDeg, point.subSolarLonDeg, 6.5),
+    [point.subSolarLatDeg, point.subSolarLonDeg],
   );
   const sunMarkerPos = useMemo(
     () => sunVec.clone().normalize().multiplyScalar(2.6),
@@ -275,7 +227,7 @@ function OrbitalMoonScene({
       if (dist > 5) return;
     }
     const coords = vector3ToLatLon(e.point);
-    onPickCoordinates(pickTarget, coords.latitude_deg, coords.longitude_deg);
+    onPickCoordinates(coords.latitude_deg, coords.longitude_deg);
   };
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
@@ -308,9 +260,8 @@ function OrbitalMoonScene({
 
       {/* Preset NASA/ISRO Landing Site Pins */}
       {SOLAR_PRESET_SITES.map((preset) => {
-        const isA = !siteA.isCustom && siteA.id === preset.id;
-        const isB = !siteB.isCustom && siteB.id === preset.id;
-        if (isA || isB) return null;
+        const isSelected = !site.isCustom && site.id === preset.id;
+        if (isSelected) return null;
         const p = latLonToVector3(preset.lat, preset.lon, 1.006);
         return (
           <mesh
@@ -318,7 +269,7 @@ function OrbitalMoonScene({
             position={p}
             onClick={(e) => {
               e.stopPropagation();
-              onSelectPresetSite(pickTarget, preset.id);
+              onSelectPresetSite(preset.id);
             }}
           >
             <sphereGeometry args={[0.016, 12, 12]} />
@@ -327,10 +278,8 @@ function OrbitalMoonScene({
         );
       })}
 
-      {/* Selected Site A & Site B Beacons + Geodesic Arc */}
-      <SiteBeacon site={siteA} badge="A" color="#00d9ff" isSunlit={pointA.isSunlit} labelsVisible={active} />
-      <SiteBeacon site={siteB} badge="B" color="#ffb547" isSunlit={pointB.isSunlit} labelsVisible={active} />
-      <GreatCircleArc siteA={siteA} siteB={siteB} />
+      {/* Selected Site Beacon */}
+      <SiteBeacon site={site} color="#00d9ff" isSunlit={point.isSunlit} labelsVisible={active} />
 
       {/* Live Sun Direction Indicator */}
       <mesh position={sunMarkerPos}>
@@ -387,13 +336,11 @@ function LocalTerrainShadowScene({
   site,
   point,
   useTerrainHorizon,
-  badge,
 }: {
   active: boolean;
   site: SolarSiteProfile;
   point: SolarEphemerisPoint;
   useTerrainHorizon: boolean;
-  badge: 'A' | 'B';
 }) {
   const { camera } = useThree();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
@@ -405,7 +352,7 @@ function LocalTerrainShadowScene({
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
     }
-  }, [active, camera, badge]);
+  }, [active, camera]);
 
   const terrainGeometry = useMemo(() => {
     const size = 140;
@@ -437,7 +384,7 @@ function LocalTerrainShadowScene({
     );
   }, [sunRadAz, sunRadEl]);
 
-  const accentColor = badge === 'A' ? '#00d9ff' : '#ffb547';
+  const accentColor = '#00d9ff';
 
   return (
     <group visible={active}>
@@ -497,14 +444,8 @@ function LocalTerrainShadowScene({
 }
 
 export function SolarGlobeSim({
-  siteA,
-  siteB,
-  pointA,
-  pointB,
-  pickTarget,
-  onPickTargetChange,
-  autoAdvancePick,
-  onToggleAutoAdvance,
+  site,
+  point,
   onPickCoordinates,
   onSelectPresetSite,
   useTerrainHorizon,
@@ -517,8 +458,8 @@ export function SolarGlobeSim({
     position: [0.4, -2.5, 1.4],
   });
 
-  const focusOnSite = (site: SolarSiteProfile) => {
-    const pos = latLonToVector3(site.lat, site.lon, 2.75);
+  const focusOnSite = (targetSite: SolarSiteProfile) => {
+    const pos = latLonToVector3(targetSite.lat, targetSite.lon, 2.75);
     setFocusPreset((prev) => ({
       id: (prev?.id ?? 0) + 1,
       position: [pos.x, pos.y, pos.z],
@@ -527,13 +468,13 @@ export function SolarGlobeSim({
 
   return (
     <div className="panel flex h-full min-h-[470px] flex-col overflow-hidden">
-      {/* Top Bar: View Switcher & Dual-Coordinate Picker Mode */}
+      {/* Top Bar: View Switcher & Coordinate Click Hint */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-bg-secondary/90 px-3.5 py-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setViewMode('ORBITAL')}
-            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
               viewMode === 'ORBITAL'
                 ? 'bg-cyan/20 text-cyan border border-cyan/60'
                 : 'border border-line text-fg-muted hover:text-fg'
@@ -544,66 +485,22 @@ export function SolarGlobeSim({
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('TERRAIN_A')}
-            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition ${
-              viewMode === 'TERRAIN_A'
+            onClick={() => setViewMode('TERRAIN')}
+            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
+              viewMode === 'TERRAIN'
                 ? 'bg-cyan/20 text-cyan border border-cyan/60'
                 : 'border border-line text-fg-muted hover:text-fg'
             }`}
           >
             <Mountain className="size-3.5" />
-            Site A Shadows
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('TERRAIN_B')}
-            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition ${
-              viewMode === 'TERRAIN_B'
-                ? 'bg-warning/20 text-warning border border-warning/60'
-                : 'border border-line text-fg-muted hover:text-fg'
-            }`}
-          >
-            <Mountain className="size-3.5" />
-            Site B Shadows
+            3D Terrain Shadows
           </button>
         </div>
 
         {viewMode === 'ORBITAL' && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-fg-muted">Click globe sets:</span>
-            <div className="inline-flex rounded border border-line-strong bg-bg/80 p-0.5 text-[11px]">
-              <button
-                type="button"
-                onClick={() => onPickTargetChange('A')}
-                className={`rounded px-2 py-0.5 font-semibold transition ${
-                  pickTarget === 'A' ? 'bg-cyan text-bg' : 'text-fg-muted hover:text-fg'
-                }`}
-              >
-                Place A
-              </button>
-              <button
-                type="button"
-                onClick={() => onPickTargetChange('B')}
-                className={`rounded px-2 py-0.5 font-semibold transition ${
-                  pickTarget === 'B' ? 'bg-warning text-bg' : 'text-fg-muted hover:text-fg'
-                }`}
-              >
-                Place B
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={onToggleAutoAdvance}
-              className={`rounded border px-2 py-0.5 text-[11px] font-mono transition ${
-                autoAdvancePick
-                  ? 'border-success/60 bg-success/15 text-success'
-                  : 'border-line text-fg-dim hover:text-fg'
-              }`}
-              title="Automatically alternate A → B on each globe click"
-            >
-              A→B Auto: {autoAdvancePick ? 'ON' : 'OFF'}
-            </button>
-          </div>
+          <span className="font-mono text-[11px] text-fg-muted">
+            Click Moon surface or preset pin to select site
+          </span>
         )}
       </div>
 
@@ -617,11 +514,8 @@ export function SolarGlobeSim({
           <Canvas shadows camera={{ position: [0.4, -2.5, 1.4], fov: 42 }}>
             <OrbitalMoonScene
               active={viewMode === 'ORBITAL'}
-              siteA={siteA}
-              siteB={siteB}
-              pointA={pointA}
-              pointB={pointB}
-              pickTarget={pickTarget}
+              site={site}
+              point={point}
               onPickCoordinates={onPickCoordinates}
               onSelectPresetSite={onSelectPresetSite}
               onHoverCoords={setHoverCoords}
@@ -629,10 +523,9 @@ export function SolarGlobeSim({
             />
             <LocalTerrainShadowScene
               active={viewMode !== 'ORBITAL'}
-              site={viewMode === 'TERRAIN_B' ? siteB : siteA}
-              point={viewMode === 'TERRAIN_B' ? pointB : pointA}
+              site={site}
+              point={point}
               useTerrainHorizon={useTerrainHorizon}
-              badge={viewMode === 'TERRAIN_B' ? 'B' : 'A'}
             />
           </Canvas>
         )}
@@ -642,19 +535,17 @@ export function SolarGlobeSim({
           <div className="rounded border border-line-strong bg-bg/85 px-2.5 py-1.5 font-mono text-[11px] backdrop-blur">
             <span className="text-warning flex items-center gap-1.5">
               <Sun className="size-3.5" />
-              Sub-Solar: {pointA.subSolarLatDeg.toFixed(2)}°, {pointA.subSolarLonDeg.toFixed(1)}°
+              Sub-Solar: {point.subSolarLatDeg.toFixed(2)}°, {point.subSolarLonDeg.toFixed(1)}°
             </span>
           </div>
           {hoverCoords && viewMode === 'ORBITAL' && (
             <div className="rounded border border-cyan/50 bg-bg/85 px-2.5 py-1 font-mono text-[11px] text-cyan backdrop-blur">
-              Cursor: {hoverCoords.lat.toFixed(2)}°, {hoverCoords.lon.toFixed(2)}° (click to set{' '}
-              {pickTarget})
+              Cursor: {hoverCoords.lat.toFixed(2)}°, {hoverCoords.lon.toFixed(2)}° (click to set site)
             </div>
           )}
           {viewMode !== 'ORBITAL' && (
             <div className="rounded border border-line-strong bg-bg/85 px-2.5 py-1 font-mono text-[11px] text-fg-muted backdrop-blur">
-              {viewMode === 'TERRAIN_A' ? 'Site A' : 'Site B'} 3D Terrain Shadows •{' '}
-              {useTerrainHorizon ? 'LOLA Horizon Mask Active' : 'Flat 0° Horizon'}
+              3D Terrain Shadows • {useTerrainHorizon ? 'LOLA Horizon Mask Active' : 'Flat 0° Horizon'}
             </div>
           )}
         </div>
@@ -674,17 +565,10 @@ export function SolarGlobeSim({
               </button>
               <button
                 type="button"
-                onClick={() => focusOnSite(siteA)}
+                onClick={() => focusOnSite(site)}
                 className="btn py-1 px-2 text-[11px] border-cyan/50 text-cyan"
               >
-                <Eye className="size-3" /> Focus A
-              </button>
-              <button
-                type="button"
-                onClick={() => focusOnSite(siteB)}
-                className="btn py-1 px-2 text-[11px] border-warning/50 text-warning"
-              >
-                <Eye className="size-3" /> Focus B
+                <Eye className="size-3" /> Focus Site
               </button>
               <button
                 type="button"
@@ -697,7 +581,7 @@ export function SolarGlobeSim({
               </button>
             </div>
             <div className="rounded border border-line bg-bg/80 px-2 py-1 font-mono text-[10px] text-fg-muted">
-              Drag: Rotate • Scroll: Zoom • Click Moon/Pins: Select {pickTarget}
+              Drag: Rotate • Scroll: Zoom • Click Moon/Pins: Select Site
             </div>
           </div>
         )}
