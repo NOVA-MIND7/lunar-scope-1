@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  BatteryCharging,
+  Clock,
   Compass,
   Eye,
   EyeOff,
@@ -12,6 +14,7 @@ import {
   Sun,
   Wifi,
   WifiOff,
+  Zap,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/PageHeader';
 import { useAppStore } from '@/stores/appStore';
@@ -60,6 +63,9 @@ export default function DirectCommsPage() {
   const [synodicHours, setSynodicHours] = useState<number>(0);
   const [band, setBand] = useState<DirectBand>('KA_BAND');
   const [txPowerWatts, setTxPowerWatts] = useState<number>(35);
+  const [payloadMb, setPayloadMb] = useState<number>(250);
+  const [batterySocPct, setBatterySocPct] = useState<number>(62);
+  const batteryCapacityWh = 1800;
   const [useTerrainHorizon, setUseTerrainHorizon] = useState<boolean>(true);
   const [rotateEarth, setRotateEarth] = useState<boolean>(true);
   const [enableGoldstone, setEnableGoldstone] = useState<boolean>(true);
@@ -68,6 +74,8 @@ export default function DirectCommsPage() {
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speedHoursPerSec, setSpeedHoursPerSec] = useState<number>(12);
+  const [batterySyncOrbital, setBatterySyncOrbital] = useState<boolean>(false);
+  const [resetNonce, setResetNonce] = useState<number>(0);
   const [showLabels, setShowLabels] = useState<boolean>(true);
   const [cameraRequest, setCameraRequest] = useState<{ id: number; target: DirectCameraPreset }>({
     id: 0,
@@ -75,6 +83,7 @@ export default function DirectCommsPage() {
   });
 
   const simHoursRef = useRef<number>(0);
+  const simSocRef = useRef<number>(62);
 
   const config: DirectCommsConfig = useMemo(
     () => ({
@@ -82,13 +91,29 @@ export default function DirectCommsPage() {
       synodicHours,
       band,
       txPowerWatts,
+      payloadMb,
+      batteryCapacityWh,
+      batterySocPct,
       useTerrainHorizon,
       rotateEarth,
       enableGoldstone,
       enableMadrid,
       enableCanberra,
     }),
-    [site, synodicHours, band, txPowerWatts, useTerrainHorizon, rotateEarth, enableGoldstone, enableMadrid, enableCanberra],
+    [
+      site,
+      synodicHours,
+      band,
+      txPowerWatts,
+      payloadMb,
+      batteryCapacityWh,
+      batterySocPct,
+      useTerrainHorizon,
+      rotateEarth,
+      enableGoldstone,
+      enableMadrid,
+      enableCanberra,
+    ],
   );
 
   const [frame, setFrame] = useState<DirectCommsFrame>(() => stepDirectCommsFrame(config));
@@ -106,6 +131,9 @@ export default function DirectCommsPage() {
   const handleReset = () => {
     setIsPlaying(false);
     simHoursRef.current = 0;
+    simSocRef.current = 62;
+    setBatterySocPct(62);
+    setResetNonce((n) => n + 1);
     setSynodicHours(0);
     setCameraRequest((p) => ({ id: p.id + 1, target: 'overview' }));
   };
@@ -115,6 +143,21 @@ export default function DirectCommsPage() {
   }, []);
 
   const cycleDays = (frame.synodicHours / 24).toFixed(1);
+
+  const formatDuration = (totalSec: number) => {
+    if (totalSec < 60) return `${totalSec.toFixed(1)} s`;
+    const mins = Math.floor(totalSec / 60);
+    const secs = Math.round(totalSec % 60);
+    if (mins < 60) return `${mins}m ${secs}s`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ${mins % 60}m`;
+  };
+
+  const formatHours = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m.toString().padStart(2, '0')}m (${hours.toFixed(1)} hrs)`;
+  };
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-4">
@@ -179,6 +222,20 @@ export default function DirectCommsPage() {
                 </button>
               ))}
             </div>
+
+            <button
+              type="button"
+              onClick={() => setBatterySyncOrbital((v) => !v)}
+              title="Toggle whether Battery SoC runs in 1x real time or fast-forwards with Orbital Sun Speed"
+              className={`rounded border px-2.5 py-1 font-mono text-[11px] font-medium transition cursor-pointer ${
+                batterySyncOrbital
+                  ? 'border-warning/60 bg-warning/15 text-warning'
+                  : 'border-success/50 bg-success/10 text-success'
+              }`}
+            >
+              <BatteryCharging className="mr-1 inline size-3.5" />
+              {batterySyncOrbital ? 'Battery: Fast Sync' : 'Battery: Real-Time (1x)'}
+            </button>
           </div>
 
           {/* Quick Scenario Jumps */}
@@ -229,15 +286,18 @@ export default function DirectCommsPage() {
         </div>
       </section>
 
-      {/* Main 3D Stage & Detailed Telemetry Panels */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+      {/* Main 3D Stage & Primary Telemetry Panels */}
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-12">
         {/* Left 8 Cols: 3D Earth-Moon Direct Communication & Terrain Shadow Canvas */}
         <div className="xl:col-span-8">
           <DirectCommsScene3D
             config={config}
             isPlaying={isPlaying}
             speedHoursPerSec={speedHoursPerSec}
+            batterySyncOrbital={batterySyncOrbital}
+            resetNonce={resetNonce}
             simHoursRef={simHoursRef}
+            simSocRef={simSocRef}
             showLabels={showLabels}
             cameraRequest={cameraRequest}
             onSelectSiteCoords={handleSelectSiteCoords}
@@ -379,6 +439,118 @@ export default function DirectCommsPage() {
               </div>
             </div>
           </section>
+        </div>
+      </div>
+
+      {/* Bottom Row: Rover Power & Endurance + Lunar Site & RF Settings */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {/* Card 2B: Rover Sunlight, Power Generation, Endurance & Comms Time */}
+          <section className="card space-y-3 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+                <Zap className="size-4 text-warning" /> Rover Power &amp; Earth Comms Time
+              </h2>
+              <span
+                className={`badge ${
+                  frame.isCharging
+                    ? 'border-success/60 bg-success/15 text-success'
+                    : frame.netPowerW >= 0
+                      ? 'border-cyan/60 bg-cyan/15 text-cyan'
+                      : 'border-warning/60 bg-warning/15 text-warning'
+                }`}
+              >
+                <BatteryCharging className="mr-1 size-3" />
+                {frame.isCharging
+                  ? `CHARGING +${frame.netPowerW}W`
+                  : frame.netPowerW >= 0
+                    ? 'BATTERY FULL'
+                    : 'BATTERY DRAIN'}
+              </span>
+            </div>
+
+            {/* Live Solar -> Battery Charging / Drain Visual Progress Bar */}
+            <div className="rounded border border-line bg-bg/70 p-2.5">
+              <div className="mb-1.5 flex items-center justify-between font-mono text-[11px]">
+                <span className="flex items-center gap-1.5 text-fg-muted">
+                  <Sun className={`size-3.5 ${frame.solarGeneratedW > 0 ? 'text-warning' : 'text-fg-dim'}`} />
+                  {frame.solarGeneratedW > 0
+                    ? `Solar (${frame.solarGeneratedW}W) ➔ Battery`
+                    : `Shadowed — Battery ➔ ${frame.linkUp ? 'Earth Comms' : 'Survival'} (${(frame.netPowerW / 3600).toFixed(2)} Wh/s)`}
+                </span>
+                <span className={frame.isCharging ? 'font-bold text-success' : frame.netPowerW < 0 ? 'font-bold text-warning' : 'font-bold text-fg'}>
+                  {frame.batterySocPct.toFixed(2)}% ({frame.batteryRemainingWh.toFixed(2)} / {batteryCapacityWh} Wh)
+                </span>
+              </div>
+              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-bg-secondary">
+                <div
+                  className={`h-full transition-all duration-200 ${
+                    frame.isCharging
+                      ? 'bg-gradient-to-r from-cyan to-success'
+                      : frame.batterySocPct < 25
+                        ? 'bg-danger'
+                        : 'bg-warning'
+                  }`}
+                  style={{ width: `${Math.min(100, Math.max(0, frame.batterySocPct))}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 font-mono text-xs">
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">SUNLIGHT → SOLAR GEN</div>
+                <div className="mt-0.5 text-sm font-bold text-warning">
+                  {frame.solarGeneratedW} W{' '}
+                  <span className="text-[11px] font-normal text-fg-muted">({frame.sunlightReceivingPct}%)</span>
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  {frame.solarIrradianceWm2} W/m² on 1.35m² GaAs array
+                </div>
+              </div>
+
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">ROVER LOAD / NET</div>
+                <div className="mt-0.5 text-sm font-bold text-fg">
+                  {frame.totalLoadW} W{' '}
+                  <span className={frame.netPowerW >= 0 ? 'text-success' : 'text-danger'}>
+                    ({frame.netPowerW >= 0 ? `+${frame.netPowerW}` : frame.netPowerW} W)
+                  </span>
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  Avionics {frame.baseRoverLoadW}W + TX {frame.txPowerDrawW}W
+                </div>
+              </div>
+
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="text-[10px] text-fg-dim">POWER LASTS (1.8 kWh)</div>
+                <div
+                  className={`mt-0.5 text-sm font-bold ${
+                    frame.powerLastsHours === null ? 'text-success' : 'text-warning'
+                  }`}
+                >
+                  {frame.powerLastsHours === null ? 'Sustained (Sunlit)' : formatHours(frame.powerLastsHours)}
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  {frame.hoursToFullCharge !== null
+                    ? `${frame.batteryRemainingWh} Wh • Full in ${frame.hoursToFullCharge}h`
+                    : `${frame.batteryRemainingWh} Wh (${Math.round(frame.batterySocPct)}% SoC)`}
+                </div>
+              </div>
+
+              <div className="rounded border border-line bg-bg/60 p-2">
+                <div className="flex items-center gap-1 text-[10px] text-fg-dim">
+                  <Clock className="size-3 text-cyan" /> TIME TO SEND ({payloadMb} MB)
+                </div>
+                <div className={`mt-0.5 text-sm font-bold ${frame.linkUp ? 'text-cyan' : 'text-danger'}`}>
+                  {frame.txDurationSec !== null ? formatDuration(frame.txDurationSec) : 'Blocked (No Link)'}
+                </div>
+                <div className="text-[10px] text-fg-dim">
+                  {frame.txEnergyWh !== null
+                    ? `${frame.txEnergyWh} Wh energy @ ${frame.effectiveGoodputMbps} Mbps`
+                    : 'Waiting for Earth LOS'}
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Card 3: Lunar Site & Direct RF Configuration */}
           <section className="card space-y-3 p-4">
@@ -441,6 +613,43 @@ export default function DirectCommsPage() {
               />
             </label>
 
+            <label className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-fg-muted">Battery SoC ({Math.round(frame.batterySocPct)}%)</span>
+              <input
+                type="range"
+                min={10}
+                max={100}
+                step={5}
+                value={Math.round(frame.batterySocPct)}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  simSocRef.current = v;
+                  setBatterySocPct(v);
+                }}
+                className="w-36 accent-warning cursor-pointer"
+              />
+            </label>
+
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <span className="text-fg-muted">Payload Size</span>
+              <div className="flex gap-1">
+                {[50, 250, 1000, 5000].map((mb) => (
+                  <button
+                    key={mb}
+                    type="button"
+                    onClick={() => setPayloadMb(mb)}
+                    className={`rounded border px-1.5 py-0.5 font-mono text-[10px] cursor-pointer ${
+                      payloadMb === mb
+                        ? 'border-cyan bg-cyan/15 text-cyan font-bold'
+                        : 'border-line bg-bg/60 text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    {mb >= 1000 ? `${mb / 1000} GB` : `${mb} MB`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
@@ -492,7 +701,6 @@ export default function DirectCommsPage() {
               </div>
             </div>
           </section>
-        </div>
       </div>
     </div>
   );

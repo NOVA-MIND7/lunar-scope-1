@@ -61,6 +61,9 @@ export interface DirectCommsConfig {
   synodicHours: number; // 0..708 hours (~29.53d synodic month)
   band: DirectBand;
   txPowerWatts: number;
+  payloadMb: number;
+  batteryCapacityWh: number;
+  batterySocPct: number;
   useTerrainHorizon: boolean;
   rotateEarth: boolean;
   enableGoldstone: boolean;
@@ -127,8 +130,28 @@ export interface DirectCommsFrame {
   oneWayDelaySec: number;
   rttSec: number;
   rateMbps: number;
+  effectiveGoodputMbps: number;
   snrDb: number;
   solarNoisePenaltyDb: number;
+
+  // Rover Solar Power Generation, Consumption & Endurance
+  solarIrradianceWm2: number;
+  sunlightReceivingPct: number;
+  solarGeneratedW: number;
+  baseRoverLoadW: number;
+  txPowerDrawW: number;
+  totalLoadW: number;
+  netPowerW: number;
+  batterySocPct: number;
+  batteryRemainingWh: number;
+  isCharging: boolean;
+  powerLastsHours: number | null; // null => Sustained (netPowerW >= 0)
+  hoursToFullCharge: number | null;
+
+  // Payload Communication Time & Energy
+  payloadMb: number;
+  txDurationSec: number | null;
+  txEnergyWh: number | null;
 }
 
 // 3D Stage constants (Earth–Moon co-rotating direct link axis)
@@ -142,6 +165,7 @@ const BASE_PHASE_OFFSET_RAD = 0.95; // t=0 => Sun at ~54° oblique phase (sunlit
 const SUN_ORBIT_RADIUS = 13.5;
 const MEAN_CISLUNAR_KM = 384_400;
 const TRUE_MOON_EARTH_PARALLAX_R = 221.25; // Earth center distance in lunar radii (384,400 / 1,737.4)
+const TRUE_EARTH_MOON_PARALLAX_R = 60.34; // Moon center distance in Earth radii (384,400 / 6,371)
 const C_KM_S = 299_792.458;
 
 const _moonCenter = new THREE.Vector3(...DC_MOON_CENTER);
@@ -276,10 +300,15 @@ export function stepDirectCommsFrame(cfg: DirectCommsConfig): DirectCommsFrame {
     return cfg.enableCanberra;
   });
 
+  // Physical Moon direction vector from Earth using true 60.34 R_earth parallax (avoids compressed-scale horizon dropouts)
+  const moonTrueCenterFromEarth = _earthCenter
+    .clone()
+    .add(new THREE.Vector3(-DC_EARTH_RADIUS * TRUE_EARTH_MOON_PARALLAX_R, 0, 0));
+
   const dsnDishes: DsnDishState[] = enabledPresets.map((st) => {
     const { pos, normal } = earthLatLonToWorld(st.lat, st.lon, earthSpinRad, DC_EARTH_RADIUS + 0.02);
-    const toSite = new THREE.Vector3().subVectors(siteWorld, pos).normalize();
-    const elDeg = (Math.asin(Math.max(-1, Math.min(1, toSite.dot(normal)))) * 180) / Math.PI;
+    const toMoon = new THREE.Vector3().subVectors(moonTrueCenterFromEarth, pos).normalize();
+    const elDeg = (Math.asin(Math.max(-1, Math.min(1, toMoon.dot(normal)))) * 180) / Math.PI;
     return {
       id: st.id,
       name: st.name,
@@ -351,6 +380,47 @@ export function stepDirectCommsFrame(cfg: DirectCommsConfig): DirectCommsFrame {
 
   const rateFactor = Math.max(0.25, Math.min(1.5, 0.78 + powerBoostDb * 0.14 - solarNoisePenaltyDb * 0.05));
   const rateMbps = linkUp ? Number((spec.baseRateMbps * rateFactor).toFixed(1)) : 0;
+  const effectiveGoodputMbps = linkUp ? Number((rateMbps * 0.85).toFixed(1)) : 0;
+
+  // Rover Solar Power Generation, Load & Battery Endurance
+  // Vertical tracking array receives cos(sunEl) across azimuth; dimmed/cut off in shadows or Earth eclipse
+  const sunReceivingFactor =
+    illumination === 'SUNLIT'
+      ? Math.max(0.72, Math.cos((Math.max(0, sunElRaw) * Math.PI) / 180)) * (1 - eclipseFraction * 0.92)
+      : illumination === 'EARTH_UMBRA_ECLIPSE'
+        ? Math.max(0, 1 - eclipseFraction) * 0.35
+        : 0;
+  const solarIrradianceWm2 = Math.round(1361 * sunReceivingFactor);
+  const sunlightReceivingPct = Math.round(sunReceivingFactor * 100);
+  // 1.35 m² GaAs triple-junction vertical-tracking array @ ~30% efficiency -> ~550 W peak
+  const solarGeneratedW = Math.round(solarIrradianceWm2 * 1.35 * 0.3);
+
+  // Avionics + thermal survival heater increases load during lunar darkness / deep shadow
+  const baseRoverLoadW = illumination === 'SUNLIT' ? 135 : 210;
+  const paEfficiency = cfg.band === 'OPTICAL' ? 0.28 : cfg.band === 'KA_BAND' ? 0.38 : 0.42;
+  const txPowerDrawW = linkUp ? Math.round(cfg.txPowerWatts / paEfficiency + 14) : 12;
+  const totalLoadW = baseRoverLoadW + txPowerDrawW;
+  const netPowerW = solarGeneratedW - totalLoadW;
+
+  const batteryCap = Math.max(200, cfg.batteryCapacityWh);
+  const clampedSoc = Math.max(0, Math.min(100, cfg.batterySocPct));
+  const batteryRemainingWh = Number(((batteryCap * clampedSoc) / 100).toFixed(2));
+  const isCharging = solarGeneratedW > 0 && netPowerW > 0 && clampedSoc < 99.9;
+  const powerLastsHours =
+    netPowerW < 0 ? Number((batteryRemainingWh / Math.abs(netPowerW)).toFixed(2)) : null;
+  const hoursToFullCharge =
+    netPowerW > 0 && clampedSoc < 100
+      ? Number(((batteryCap - batteryRemainingWh) / netPowerW).toFixed(2))
+      : null;
+
+  // Direct Communication Payload Transfer Time & Energy
+  const payloadMb = Math.max(1, cfg.payloadMb);
+  const txDurationSec =
+    linkUp && effectiveGoodputMbps > 0
+      ? Number(((payloadMb * 8) / effectiveGoodputMbps).toFixed(1))
+      : null;
+  const txEnergyWh =
+    txDurationSec !== null ? Number(((totalLoadW * txDurationSec) / 3600).toFixed(2)) : null;
 
   return {
     synodicHours: h,
@@ -388,7 +458,25 @@ export function stepDirectCommsFrame(cfg: DirectCommsConfig): DirectCommsFrame {
     oneWayDelaySec,
     rttSec,
     rateMbps,
+    effectiveGoodputMbps,
     snrDb,
     solarNoisePenaltyDb,
+
+    solarIrradianceWm2,
+    sunlightReceivingPct,
+    solarGeneratedW,
+    baseRoverLoadW,
+    txPowerDrawW,
+    totalLoadW,
+    netPowerW,
+    batterySocPct: Number(clampedSoc.toFixed(2)),
+    batteryRemainingWh,
+    isCharging,
+    powerLastsHours,
+    hoursToFullCharge,
+
+    payloadMb,
+    txDurationSec,
+    txEnergyWh,
   };
 }
