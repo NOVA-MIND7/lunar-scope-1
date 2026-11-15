@@ -159,9 +159,9 @@ export function CoordinateEntryPanel() {
             </p>
           ) : null}
 
-          <button type="submit" className="btn btn-primary w-full justify-center text-xs">
+          <button type="submit" className="btn btn-primary w-full justify-center text-xs" aria-label="Locate on Moon">
             <Crosshair className="size-3.5" />
-            Locate & Rotate to Site
+            Locate on Moon & Rotate
           </button>
         </form>
       </div>

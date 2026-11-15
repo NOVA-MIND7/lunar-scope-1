@@ -106,3 +106,70 @@ export function computeAstronomicalState(timestampMs: number): AstronomicalState
     moonPhaseName,
   };
 }
+
+const LUNAR_SYNODIC_MONTH = 29.530588853;
+const LUNAR_SIDEREAL_MONTH = 27.321661;
+const LUNAR_OBLIQUITY_DEG = 1.5424;
+const RAD = Math.PI / 180;
+
+/**
+ * Calculate solar elevation angle in degrees above local horizontal plane
+ */
+export function calculateSolarElevationDeg(latDeg: number, lonDeg: number, timestampMs: number): number {
+  const D = (timestampMs - J2000_EPOCH_MS) / MS_PER_DAY;
+  const sunDeclination = LUNAR_OBLIQUITY_DEG * Math.sin((2 * Math.PI * (D - 80)) / 365.25);
+  const subsolarLon = (((218.316 - 360 * (D / LUNAR_SYNODIC_MONTH)) % 360) + 360) % 360;
+  const phi = latDeg * RAD;
+  const delta = sunDeclination * RAD;
+  const hAngle = (lonDeg - subsolarLon) * RAD;
+  const sinElev = Math.max(-1, Math.min(1, Math.sin(phi) * Math.sin(delta) + Math.cos(phi) * Math.cos(delta) * Math.cos(hAngle)));
+  return Math.asin(sinElev) / RAD;
+}
+
+/**
+ * Calculate solar azimuth angle in degrees clockwise from local North
+ */
+export function calculateSolarAzimuthDeg(latDeg: number, lonDeg: number, timestampMs: number): number {
+  const D = (timestampMs - J2000_EPOCH_MS) / MS_PER_DAY;
+  const sunDeclination = LUNAR_OBLIQUITY_DEG * Math.sin((2 * Math.PI * (D - 80)) / 365.25);
+  const subsolarLon = (((218.316 - 360 * (D / LUNAR_SYNODIC_MONTH)) % 360) + 360) % 360;
+  const phi = latDeg * RAD;
+  const delta = sunDeclination * RAD;
+  const hAngle = (lonDeg - subsolarLon) * RAD;
+
+  const y = Math.sin(hAngle);
+  const x = Math.cos(hAngle) * Math.sin(phi) - Math.tan(delta) * Math.cos(phi);
+  const az = (Math.atan2(y, x) / RAD) + 180;
+  return ((az % 360) + 360) % 360;
+}
+
+/**
+ * Calculate Earth elevation angle in degrees above local horizontal plane
+ */
+export function calculateEarthElevationDeg(latDeg: number, lonDeg: number, timestampMs: number): number {
+  const D = (timestampMs - J2000_EPOCH_MS) / MS_PER_DAY;
+  const libLat = 6.68 * Math.sin((2 * Math.PI * D) / LUNAR_SIDEREAL_MONTH);
+  const libLon = 7.91 * Math.sin((2 * Math.PI * (D - 5)) / LUNAR_SIDEREAL_MONTH);
+  const phi = latDeg * RAD;
+  const deltaE = libLat * RAD;
+  const hEarth = (lonDeg - libLon) * RAD;
+  const sinElev = Math.max(-1, Math.min(1, Math.sin(phi) * Math.sin(deltaE) + Math.cos(phi) * Math.cos(deltaE) * Math.cos(hEarth)));
+  return Math.asin(sinElev) / RAD;
+}
+
+/**
+ * Calculate Earth azimuth angle in degrees clockwise from local North
+ */
+export function calculateEarthAzimuthDeg(latDeg: number, lonDeg: number, timestampMs: number): number {
+  const D = (timestampMs - J2000_EPOCH_MS) / MS_PER_DAY;
+  const libLat = 6.68 * Math.sin((2 * Math.PI * D) / LUNAR_SIDEREAL_MONTH);
+  const libLon = 7.91 * Math.sin((2 * Math.PI * (D - 5)) / LUNAR_SIDEREAL_MONTH);
+  const phi = latDeg * RAD;
+  const deltaE = libLat * RAD;
+  const hEarth = (lonDeg - libLon) * RAD;
+
+  const y = Math.sin(hEarth);
+  const x = Math.cos(hEarth) * Math.sin(phi) - Math.tan(deltaE) * Math.cos(phi);
+  const az = (Math.atan2(y, x) / RAD) + 180;
+  return ((az % 360) + 360) % 360;
+}

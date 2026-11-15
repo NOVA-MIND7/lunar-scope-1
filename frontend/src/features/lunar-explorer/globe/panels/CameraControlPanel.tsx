@@ -52,7 +52,12 @@ export function CameraControlPanel({ compact = false, fullscreen }: { compact?: 
   const site = useAppStore((s) => s.selectedLandingSite);
   const camera = useGlobeStore((s) => s.camera);
 
-  const focusSite = () => site && issue({ kind: 'focus', latitude_deg: site.coordinates.latitude_deg, longitude_deg: site.coordinates.longitude_deg });
+  const focusSite = () => {
+    if (site) {
+      useGlobeStore.getState().setFocusTarget('moon');
+      issue({ kind: 'focus', latitude_deg: site.coordinates.latitude_deg, longitude_deg: site.coordinates.longitude_deg });
+    }
+  };
   const southLabel = southPoleMode ? 'Exit South Pole' : 'Explore South Pole';
   const toggleSouth = southPoleMode ? exitSouthPole : enterSouthPole;
 

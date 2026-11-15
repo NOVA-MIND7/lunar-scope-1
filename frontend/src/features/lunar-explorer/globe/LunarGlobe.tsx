@@ -46,11 +46,11 @@ function QuickNavHelper() {
   const setPending = useGlobeStore((s) => s.setPending);
 
   return (
-    <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-full border border-line bg-bg/90 px-3 py-1 shadow-xl backdrop-blur-md text-[11px]">
-      <span className="hidden xl:inline text-fg-dim font-mono text-[10px]">
+    <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-line bg-bg/90 px-3 py-1 shadow-xl backdrop-blur-md text-[11px] whitespace-nowrap">
+      <span className="hidden 2xl:inline text-fg-dim font-mono text-[10px]">
         🖱️ Rotate: Drag &nbsp;|&nbsp; 🔄 Zoom: Scroll &nbsp;|&nbsp; 📍 Click: Pick
       </span>
-      <div className="hidden xl:inline h-3 w-px bg-line" />
+      <div className="hidden 2xl:inline h-3 w-px bg-line" />
       <span className="text-fg-muted font-medium text-[10px]">Quick Jump:</span>
       <button
         type="button"
@@ -391,7 +391,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
           <div className="pointer-events-none absolute bottom-3 left-3 z-10">
             <CoordinateReadout />
           </div>
-          <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2">
+          <div className="pointer-events-none absolute bottom-14 sm:bottom-16 left-1/2 z-30 -translate-x-1/2 max-w-[calc(100%-2rem)]">
             <PendingLocationBar />
           </div>
           <div className="pointer-events-none absolute bottom-3 right-3 z-10 hidden sm:block">

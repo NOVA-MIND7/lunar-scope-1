@@ -39,8 +39,13 @@ const Marker = memo(function Marker({ marker, site, assets }: { marker: MarkerMo
         onClick={(e: ThreeEvent<MouseEvent>) => {
           if (e.delta > CLICK_DRAG_TOLERANCE_PX) return;
           e.stopPropagation();
-          useGlobeStore.getState().clearPending();
+          useGlobeStore.getState().setFocusTarget('moon');
           useAppStore.getState().selectLandingSite(site);
+          useGlobeStore.getState().setPending(
+            site.coordinates.latitude_deg,
+            site.coordinates.longitude_deg,
+            { focus: true },
+          );
         }}
       />
       {hovered ? (

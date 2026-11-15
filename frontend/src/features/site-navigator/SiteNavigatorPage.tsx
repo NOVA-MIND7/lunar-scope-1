@@ -8,8 +8,9 @@ import { LunarGlobe } from '@/features/lunar-explorer/globe/LunarGlobe';
 import { CATEGORY_ORDER, CATEGORY_STYLE, PRECISION_NOTE } from '@/features/lunar-explorer/globe/constants';
 import { useSites } from '@/hooks/useApi';
 import { useAppStore } from '@/stores/appStore';
+import { useGlobeStore } from '@/features/lunar-explorer/globe/globeStore';
 import { formatLatitude, formatLongitude } from '@/utils/format';
-import type { SiteCategory } from '@/types';
+import type { LandingSite, SiteCategory } from '@/types';
 
 export default function SiteNavigatorPage() {
   const { data, error, isPending, refetch } = useSites();
@@ -31,6 +32,22 @@ export default function SiteNavigatorPage() {
       return matchCategory && matchSearch;
     });
   }, [data, filter, search]);
+
+  const handleSelectSite = (site: LandingSite) => {
+    const isSelected = selected?.id === site.id;
+    if (isSelected) {
+      selectLandingSite(null);
+      useGlobeStore.getState().clearPending();
+    } else {
+      selectLandingSite(site);
+      useGlobeStore.getState().setFocusTarget('moon');
+      useGlobeStore.getState().setPending(
+        site.coordinates.latitude_deg,
+        site.coordinates.longitude_deg,
+        { focus: true },
+      );
+    }
+  };
 
   return (
     <div className="mx-auto max-w-[1600px]">
@@ -80,7 +97,11 @@ export default function SiteNavigatorPage() {
               const style = CATEGORY_STYLE[site.category];
               const note = PRECISION_NOTE[site.precision];
               return (
-                <li key={site.id} className={`panel p-3 ${isSelected ? 'border-cyan/70 shadow-glow' : ''}`}>
+                <li
+                  key={site.id}
+                  className={`panel p-3 cursor-pointer transition hover:border-cyan/50 ${isSelected ? 'border-cyan/70 shadow-glow' : ''}`}
+                  onClick={() => handleSelectSite(site)}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <h2 className="text-sm font-semibold">{site.name}</h2>
                     <span className="size-2.5 shrink-0 rounded-full" style={{ background: style.color }} title={style.label} aria-label={style.label} />
@@ -99,9 +120,12 @@ export default function SiteNavigatorPage() {
                     type="button"
                     className={`btn mt-2 ${isSelected ? 'btn-primary' : ''}`}
                     aria-pressed={isSelected}
-                    onClick={() => selectLandingSite(isSelected ? null : site)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectSite(site);
+                    }}
                   >
-                    {isSelected ? 'Selected' : 'Select site'}
+                    {isSelected ? 'Selected' : 'Select site & focus'}
                   </button>
                 </li>
               );
