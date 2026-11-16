@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     # Comma-separated list of allowed browser origins.
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origin_regex: str = ""
 
     # Optional: Supabase / PostgreSQL. Leave empty to run without a database.
     database_url: str = ""
