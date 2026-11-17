@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DraggablePanel } from './DraggablePanel';
@@ -44,5 +44,21 @@ describe('DraggablePanel', () => {
     await user.click(expandBtn);
 
     expect(screen.getByText('Hidden when collapsed')).toBeInTheDocument();
+  });
+
+  it('stops wheel event propagation to preserve panel scrolling', () => {
+    const onParentWheel = vi.fn();
+    render(
+      <div onWheel={onParentWheel}>
+        <DraggablePanel id="test-scroll" title="Scrollable Panel">
+          <div>Panel content</div>
+        </DraggablePanel>
+      </div>,
+    );
+
+    const content = screen.getByText('Panel content');
+    fireEvent.wheel(content, { deltaY: 50 });
+
+    expect(onParentWheel).not.toHaveBeenCalled();
   });
 });

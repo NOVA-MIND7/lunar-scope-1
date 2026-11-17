@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useGlobeStore } from './globeStore';
 import { createInitialState, useAppStore } from '@/stores/appStore';
+import { getCelestialBodyPosition } from './MoonControls';
 
 beforeEach(() => {
   useAppStore.setState(createInitialState());
@@ -67,5 +68,41 @@ describe('globeStore', () => {
     expect(useGlobeStore.getState().southPoleMode).toBe(true);
     expect(useGlobeStore.getState().showSatellitePanel).toBe(true);
     expect(useGlobeStore.getState().command?.kind).toBe('southPole');
+  });
+
+  it('alignWithEarth and alignWithSun set focusTarget and issue command on single call', () => {
+    useGlobeStore.getState().alignWithEarth();
+    expect(useGlobeStore.getState().focusTarget).toBe('earth');
+    expect(useGlobeStore.getState().command?.kind).toBe('focus');
+
+    useGlobeStore.getState().alignWithSun();
+    expect(useGlobeStore.getState().focusTarget).toBe('sun');
+    expect(useGlobeStore.getState().command?.kind).toBe('focus');
+  });
+
+  it('toggleAutoRotate and toggleTimePlaying stay synchronized', () => {
+    expect(useGlobeStore.getState().autoRotate).toBe(true);
+    expect(useGlobeStore.getState().isTimePlaying).toBe(true);
+
+    useGlobeStore.getState().toggleAutoRotate();
+    expect(useGlobeStore.getState().autoRotate).toBe(false);
+    expect(useGlobeStore.getState().isTimePlaying).toBe(false);
+
+    useGlobeStore.getState().toggleTimePlaying();
+    expect(useGlobeStore.getState().autoRotate).toBe(true);
+    expect(useGlobeStore.getState().isTimePlaying).toBe(true);
+  });
+
+  it('getCelestialBodyPosition returns correct 3D positions for bodies immediately', () => {
+    const sunPos = getCelestialBodyPosition('sun');
+    expect(sunPos.x).toBe(0);
+    expect(sunPos.y).toBe(0);
+    expect(sunPos.z).toBe(0);
+
+    const earthPos = getCelestialBodyPosition('earth', 946728000000);
+    expect(earthPos.length()).toBeCloseTo(20.0, 1);
+
+    const moonPos = getCelestialBodyPosition('moon', 946728000000);
+    expect(moonPos.length()).toBeGreaterThan(15);
   });
 });

@@ -175,7 +175,7 @@ export function LandingNavigatorPanel() {
         {error ? <ErrorState title="Landing sites unavailable" message={error.message} onRetry={() => void refetch()} /> : null}
 
         {/* Sites List */}
-        <div className="max-h-[380px] overflow-y-auto space-y-2 pr-1">
+        <div className="space-y-2 pr-1">
           {sites.length === 0 ? (
             <p className="p-3 text-center text-xs text-fg-dim font-mono">No matching sites found for this era</p>
           ) : (

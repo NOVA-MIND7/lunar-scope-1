@@ -78,49 +78,55 @@ export function CameraControlPanel({ compact = false, fullscreen }: { compact?: 
   return (
     <div className="pointer-events-auto flex flex-col gap-2" role="group" aria-label="Camera controls">
       <div className={`grid ${compact ? 'grid-cols-1' : 'grid-cols-6'} gap-1.5 justify-items-center`}>
-        {iconBtn('Rotate mode (Left drag rotates)', () => setInteractionMode('rotate'), <Orbit className="size-4" aria-hidden />, {
+        {iconBtn('Rotate mode (Left drag rotates)', () => setInteractionMode('rotate'), <Orbit className="size-4 pointer-events-none" aria-hidden />, {
           pressed: interactionMode === 'rotate',
           title: 'Rotate mode: Left mouse button rotates Moon',
         })}
-        {iconBtn('Pan mode (Left drag moves Moon)', () => setInteractionMode('pan'), <Hand className="size-4" aria-hidden />, {
+        {iconBtn('Pan mode (Left drag moves Moon)', () => setInteractionMode('pan'), <Hand className="size-4 pointer-events-none" aria-hidden />, {
           pressed: interactionMode === 'pan',
           title: 'Pan mode: Left mouse button moves Moon across screen',
         })}
         {iconBtn(
           autoRotate ? 'Pause planetary rotation' : 'Resume planetary rotation',
           toggleAutoRotate,
-          autoRotate ? <Pause className="size-4 text-cyan" aria-hidden /> : <Play className="size-4 text-cyan" aria-hidden />,
+          autoRotate ? <Pause className="size-4 text-cyan pointer-events-none" aria-hidden /> : <Play className="size-4 text-cyan pointer-events-none" aria-hidden />,
           { pressed: autoRotate, title: autoRotate ? 'Pause Moon & Earth rotation' : 'Start Moon & Earth rotation' },
         )}
-        {iconBtn('Reset view (Focus Moon)', () => { setFocusTarget('moon'); issue({ kind: 'reset' }); }, <RotateCcw className="size-4" aria-hidden />, { pressed: focusTarget === 'moon', title: 'Focus on the Moon' })}
-        {iconBtn('Focus Planet Earth', () => { setFocusTarget('earth'); alignWithEarth(); }, <Globe className="size-4 text-blue-400" aria-hidden />, { pressed: focusTarget === 'earth', title: 'Focus on Planet Earth (Orbiting Sun)' })}
-        {iconBtn('Focus Sun (Solar System Priority)', () => { setFocusTarget('sun'); alignWithSun(); }, <Sun className="size-4 text-amber-400" aria-hidden />, { pressed: focusTarget === 'sun', title: 'Focus on Sun (Center of Solar System)' })}
+        {iconBtn('Reset view (Focus Moon)', () => { setFocusTarget('moon'); issue({ kind: 'reset' }); }, <RotateCcw className="size-4 pointer-events-none" aria-hidden />, { pressed: focusTarget === 'moon', title: 'Focus on the Moon' })}
+        {iconBtn('Focus Planet Earth', () => { setFocusTarget('earth'); alignWithEarth(); }, <Globe className="size-4 text-blue-400 pointer-events-none" aria-hidden />, { pressed: focusTarget === 'earth', title: 'Focus on Planet Earth (Orbiting Sun)' })}
+        {iconBtn('Focus Sun (Solar System Priority)', () => { setFocusTarget('sun'); alignWithSun(); }, <Sun className="size-4 text-amber-400 pointer-events-none" aria-hidden />, { pressed: focusTarget === 'sun', title: 'Focus on Sun (Center of Solar System)' })}
 
-        {iconBtn('Zoom in', () => issue({ kind: 'zoom', factor: 0.7 }), <ZoomIn className="size-4" aria-hidden />, { disabled: camera.distance <= 1.06 })}
-        {iconBtn('Zoom out', () => issue({ kind: 'zoom', factor: 1 / 0.7 }), <ZoomOut className="size-4" aria-hidden />, { disabled: camera.distance >= 80 })}
-        {iconBtn('Focus selected site', () => { setFocusTarget('moon'); focusSite(); }, <LocateFixed className="size-4" aria-hidden />, { disabled: !site, title: site ? 'Focus selected site' : 'Select a site first' })}
-        {iconBtn(showGrid ? 'Hide coordinate grid' : 'Show coordinate grid', toggleGrid, <Grid3x3 className="size-4" aria-hidden />, { pressed: showGrid })}
-        {iconBtn('Reset panel positions', resetPanelPositions, <LayoutGrid className="size-4" aria-hidden />, { title: 'Reset all movable panels to default positions' })}
+        {iconBtn('Zoom in', () => issue({ kind: 'zoom', factor: 0.7 }), <ZoomIn className="size-4 pointer-events-none" aria-hidden />, { disabled: camera.distance <= 1.06 })}
+        {iconBtn('Zoom out', () => issue({ kind: 'zoom', factor: 1 / 0.7 }), <ZoomOut className="size-4 pointer-events-none" aria-hidden />, { disabled: camera.distance >= 80 })}
+        {iconBtn('Focus selected site', () => { setFocusTarget('moon'); focusSite(); }, <LocateFixed className="size-4 pointer-events-none" aria-hidden />, { disabled: !site, title: site ? 'Focus selected site' : 'Select a site first' })}
+        {iconBtn(showGrid ? 'Hide coordinate grid' : 'Show coordinate grid', toggleGrid, <Grid3x3 className="size-4 pointer-events-none" aria-hidden />, { pressed: showGrid })}
+        {iconBtn('Reset panel positions', resetPanelPositions, <LayoutGrid className="size-4 pointer-events-none" aria-hidden />, { title: 'Reset all movable panels to default positions' })}
         {iconBtn(
           showSatellitePanel ? 'Hide Cassini South Pole Telemetry' : 'Show Cassini South Pole Telemetry',
-          () => toggleSatellitePanel(),
-          <Satellite className="size-4" aria-hidden />,
+          () => {
+            if (!showSatellitePanel) {
+              focusSouthPoleAndSatellite();
+            } else {
+              toggleSatellitePanel(false);
+            }
+          },
+          <Satellite className="size-4 pointer-events-none" aria-hidden />,
           { pressed: showSatellitePanel, title: 'Cassini Satellite & South Pole Reconnaissance' },
         )}
         {iconBtn(
           showTelemetryLabels ? 'Hide satellite & body labels/tabs' : 'Show satellite & body labels/tabs',
           toggleTelemetryLabels,
-          <Tag className="size-4" aria-hidden />,
+          <Tag className="size-4 pointer-events-none" aria-hidden />,
           { pressed: showTelemetryLabels, title: showTelemetryLabels ? 'Hide satellite & body labels/tabs' : 'Show satellite & body labels/tabs' },
         )}
         {compact
-          ? iconBtn(southLabel, toggleSouth, <Snowflake className="size-4" aria-hidden />, { pressed: southPoleMode })
+          ? iconBtn(southLabel, toggleSouth, <Snowflake className="size-4 pointer-events-none" aria-hidden />, { pressed: southPoleMode })
           : null}
         {fullscreen?.supported
           ? iconBtn(
               fullscreen.isFullscreen ? 'Exit full screen' : 'Full screen',
               fullscreen.toggle,
-              fullscreen.isFullscreen ? <Minimize2 className="size-4" aria-hidden /> : <Maximize2 className="size-4" aria-hidden />,
+              fullscreen.isFullscreen ? <Minimize2 className="size-4 pointer-events-none" aria-hidden /> : <Maximize2 className="size-4 pointer-events-none" aria-hidden />,
             )
           : null}
       </div>

@@ -15,8 +15,23 @@ import {
   type CameraGoal,
 } from './cameraMath';
 import { useAppStore } from '@/stores/appStore';
+import { computeAstronomicalState } from '@/utils/astronomicalTime';
 
 type Controls = ElementRef<typeof OrbitControls>;
+
+export function getCelestialBodyPosition(
+  focusTarget: 'moon' | 'earth' | 'sun',
+  timestampMs: number = Date.now(),
+): Vector3 {
+  if (focusTarget === 'sun') {
+    return new Vector3(0, 0, 0);
+  }
+  const astro = computeAstronomicalState(timestampMs);
+  if (focusTarget === 'earth') {
+    return new Vector3(...astro.earthPosition);
+  }
+  return new Vector3(...astro.moonPosition);
+}
 
 interface Animation {
   fromDir: Vector3;
@@ -33,9 +48,9 @@ interface Animation {
 const TMP = new Vector3();
 
 function startAnimation(camera: { position: Vector3 }, controls: Controls, goal: CameraGoal): Animation | null {
-  const rel = TMP.copy(camera.position).sub(goal.target.lengthSq() === 0 ? new Vector3() : controls.target);
+  const rel = TMP.copy(camera.position).sub(controls.target);
   const fromDist = rel.length();
-  const fromDir = rel.clone().normalize();
+  const fromDir = fromDist > 1e-6 ? rel.clone().normalize() : goal.direction.clone();
   const angle = fromDir.angleTo(goal.direction);
   if (angle < 1e-3 && Math.abs(fromDist - goal.distance) < 1e-3 && controls.target.distanceTo(goal.target) < 1e-3) return null;
   let axis = new Vector3().crossVectors(fromDir, goal.direction);
@@ -45,32 +60,40 @@ function startAnimation(camera: { position: Vector3 }, controls: Controls, goal:
     fromDir,
     axis,
     angle,
-    fromDist,
+    fromDist: Math.max(fromDist, 0.1),
     toDist: goal.distance,
     fromTarget: controls.target.clone(),
     toTarget: goal.target.clone(),
     t: 0,
-    duration: Math.min(1.8, 0.6 + angle * 0.45 + Math.abs(Math.log(goal.distance / fromDist)) * 0.2),
+    duration: Math.min(1.8, 0.6 + angle * 0.45 + Math.abs(Math.log(goal.distance / Math.max(fromDist, 0.1))) * 0.2),
   };
 }
 
 function goalFor(command: CameraCommand, camera: { position: Vector3 }, controls: Controls, targetPos: Vector3): CameraGoal {
-  const spinAngle = useGlobeStore.getState().moonSpinAngle || 0;
+  const state = useGlobeStore.getState();
+  const spinAngle = state.moonSpinAngle || 0;
+  const isMoon = state.focusTarget === 'moon';
+
   switch (command.kind) {
     case 'reset': {
       const base = resetGoal();
-      const dir = base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle);
+      const dir = isMoon
+        ? base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle)
+        : base.direction.clone();
       return { direction: clampPolar(dir), distance: base.distance, target: targetPos.clone() };
     }
     case 'southPole': {
       const base = southPoleGoal();
-      const dir = base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle);
+      const dir = isMoon
+        ? base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle)
+        : base.direction.clone();
       return { direction: clampPolar(dir), distance: base.distance, target: targetPos.clone() };
     }
     case 'focus': {
       const base = focusGoal(command.latitude_deg, command.longitude_deg, camera.position.distanceTo(controls.target), command.distance);
-      // Rotate the camera goal direction by the Moon's axial spin so the surface landmark rotates to directly face the camera
-      const dir = base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle);
+      const dir = isMoon
+        ? base.direction.clone().applyAxisAngle(new Vector3(0, 1, 0), spinAngle)
+        : base.direction.clone();
       return {
         direction: clampPolar(dir),
         distance: base.distance,
@@ -104,13 +127,17 @@ export const MoonControls = memo(function MoonControls({
   useEffect(() => {
     const site = useAppStore.getState().selectedLandingSite;
     const focusTarget = useGlobeStore.getState().focusTarget;
+    const initialTarget = getCelestialBodyPosition(focusTarget, useGlobeStore.getState().activeTimestampMs || Date.now());
     const startDist = focusTarget === 'sun' ? 36.0 : DEFAULT_DISTANCE;
     const goal = site
       ? focusGoal(site.coordinates.latitude_deg, site.coordinates.longitude_deg, startDist)
       : { direction: new Vector3(0, 0.4, 0.9).normalize(), distance: startDist };
-    camera.position.copy(goal.direction).multiplyScalar(goal.distance);
-    camera.lookAt(targetPos);
-    lastTargetPos.current.copy(targetPos);
+    camera.position.copy(initialTarget).addScaledVector(goal.direction, goal.distance);
+    if (controlsRef.current) {
+      controlsRef.current.target.copy(initialTarget);
+    }
+    camera.lookAt(initialTarget);
+    lastTargetPos.current.copy(initialTarget);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -131,44 +158,53 @@ export const MoonControls = memo(function MoonControls({
     const controls = controlsRef.current;
     if (!command || !controls || command.id === handledCommand.current) return;
     handledCommand.current = command.id;
-    animation.current = startAnimation(camera, controls, goalFor(command, camera, controls, targetPos));
-  }, [command, camera, targetPos]);
+
+    const state = useGlobeStore.getState();
+    const resolvedTarget = getCelestialBodyPosition(state.focusTarget, state.activeTimestampMs || Date.now());
+
+    animation.current = startAnimation(camera, controls, goalFor(command, camera, controls, resolvedTarget));
+  }, [command, camera]);
 
   useFrame((_, delta) => {
     const controls = controlsRef.current;
     if (!controls) return;
     const dt = Math.min(delta, 0.05);
 
-    // Track focused body movement
-    const targetDelta = targetPos.clone().sub(lastTargetPos.current);
-    if (targetDelta.lengthSq() > 1e-6) {
-      camera.position.add(targetDelta);
-      lastTargetPos.current.copy(targetPos);
-      if (!animation.current) {
-        controls.target.add(targetDelta);
-      }
-    }
+    const state = useGlobeStore.getState();
+    const currentTarget = getCelestialBodyPosition(state.focusTarget, state.activeTimestampMs || Date.now());
 
     const a = animation.current;
     if (a) {
+      a.toTarget.copy(currentTarget);
       a.t = Math.min(1, a.t + dt / a.duration);
       const e = easeInOutCubic(a.t);
       const dir = a.fromDir.clone().applyAxisAngle(a.axis, a.angle * e);
       const dist = a.fromDist * Math.pow(a.toDist / a.fromDist, e); // log-interpolated zoom feels uniform
       controls.target.lerpVectors(a.fromTarget, a.toTarget, e);
       camera.position.copy(controls.target).addScaledVector(dir, dist);
-      if (a.t >= 1) animation.current = null;
+      if (a.t >= 1) {
+        animation.current = null;
+        lastTargetPos.current.copy(currentTarget);
+      }
+    } else {
+      // Track focused body movement when idle
+      const targetDelta = currentTarget.clone().sub(lastTargetPos.current);
+      if (targetDelta.lengthSq() > 1e-6) {
+        camera.position.add(targetDelta);
+        controls.target.add(targetDelta);
+        lastTargetPos.current.copy(currentTarget);
+      }
     }
 
     // Keep rotation gentle when close to the surface, and limit how far the view can be panned off-centre.
     const d = camera.position.distanceTo(controls.target);
     controls.rotateSpeed = 0.12 + 0.55 * Math.min(1, (d - MIN_DISTANCE) / (DEFAULT_DISTANCE - MIN_DISTANCE));
     controls.panSpeed = 0.5 * Math.min(1, d / DEFAULT_DISTANCE);
-    const panOffset = controls.target.distanceTo(targetPos);
+    const panOffset = controls.target.distanceTo(currentTarget);
     if (panOffset > MAX_PAN) {
-      const clamped = controls.target.clone().sub(targetPos).setLength(MAX_PAN);
-      camera.position.add(clamped.clone().sub(controls.target.clone().sub(targetPos)));
-      controls.target.copy(targetPos).add(clamped);
+      const clamped = controls.target.clone().sub(currentTarget).setLength(MAX_PAN);
+      camera.position.add(clamped.clone().sub(controls.target.clone().sub(currentTarget)));
+      controls.target.copy(currentTarget).add(clamped);
     }
     controls.update();
 
@@ -178,7 +214,7 @@ export const MoonControls = memo(function MoonControls({
     if (now - last.time > 100) {
       const dist = camera.position.distanceTo(controls.target);
       const center = viewCenter(camera.position.clone().sub(controls.target));
-      const pan = controls.target.distanceTo(targetPos);
+      const pan = controls.target.distanceTo(currentTarget);
       if (
         Math.abs(dist - last.distance) > 0.002 ||
         Math.abs(center.latitude_deg - last.lat) > 0.05 ||

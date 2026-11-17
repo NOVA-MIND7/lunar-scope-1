@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { CameraControlPanel } from './CameraControlPanel';
 import { CoordinateEntryPanel } from './CoordinateEntryPanel';
 import { LandingNavigatorPanel, getDecadeCluster, getSiteYear } from './LandingNavigatorPanel';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -95,5 +96,60 @@ describe('LandingNavigatorPanel & 10-year decade clustering', () => {
     expect(screen.getByRole('button', { name: /2000s/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /2020s/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /2030s\+/i })).toBeInTheDocument();
+  });
+});
+
+describe('CameraControlPanel single-click actions', () => {
+  it('triggers action on a single click for each toolbar icon', async () => {
+    const user = userEvent.setup();
+    render(<CameraControlPanel compact />);
+
+    // 1. Pan mode
+    expect(useGlobeStore.getState().interactionMode).toBe('rotate');
+    await user.click(screen.getByRole('button', { name: /Pan mode/i }));
+    expect(useGlobeStore.getState().interactionMode).toBe('pan');
+
+    // 2. Rotate mode
+    await user.click(screen.getByRole('button', { name: /Rotate mode/i }));
+    expect(useGlobeStore.getState().interactionMode).toBe('rotate');
+
+    // 3. Pause / Resume rotation
+    expect(useGlobeStore.getState().autoRotate).toBe(true);
+    await user.click(screen.getByRole('button', { name: /Pause planetary rotation/i }));
+    expect(useGlobeStore.getState().autoRotate).toBe(false);
+    expect(useGlobeStore.getState().isTimePlaying).toBe(false);
+
+    // 4. Focus Earth on a single click
+    await user.click(screen.getByRole('button', { name: /Focus Planet Earth/i }));
+    expect(useGlobeStore.getState().focusTarget).toBe('earth');
+    expect(useGlobeStore.getState().command?.kind).toBe('focus');
+
+    // 5. Focus Sun on a single click
+    await user.click(screen.getByRole('button', { name: /Focus Sun/i }));
+    expect(useGlobeStore.getState().focusTarget).toBe('sun');
+    expect(useGlobeStore.getState().command?.kind).toBe('focus');
+
+    // 6. Reset view (Focus Moon) on a single click
+    await user.click(screen.getByRole('button', { name: /Reset view \(Focus Moon\)/i }));
+    expect(useGlobeStore.getState().focusTarget).toBe('moon');
+    expect(useGlobeStore.getState().command?.kind).toBe('reset');
+
+    // 7. Toggle Grid on a single click
+    expect(useGlobeStore.getState().showGrid).toBe(true);
+    await user.click(screen.getByRole('button', { name: /Hide coordinate grid/i }));
+    expect(useGlobeStore.getState().showGrid).toBe(false);
+
+    // 8. Satellite Telemetry on a single click
+    expect(useGlobeStore.getState().showSatellitePanel).toBe(false);
+    await user.click(screen.getByRole('button', { name: /Show Cassini South Pole Telemetry/i }));
+    expect(useGlobeStore.getState().showSatellitePanel).toBe(true);
+    expect(useGlobeStore.getState().focusTarget).toBe('moon');
+
+    // 9. South Pole Explore on a single click
+    expect(useGlobeStore.getState().southPoleMode).toBe(true); // set by focusSouthPoleAndSatellite
+    await user.click(screen.getByRole('button', { name: /Exit South Pole/i }));
+    expect(useGlobeStore.getState().southPoleMode).toBe(false);
+    await user.click(screen.getByRole('button', { name: /Explore South Pole/i }));
+    expect(useGlobeStore.getState().southPoleMode).toBe(true);
   });
 });

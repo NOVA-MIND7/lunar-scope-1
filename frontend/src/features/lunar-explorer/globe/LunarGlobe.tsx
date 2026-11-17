@@ -193,11 +193,20 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
   const activeTimestampMs = useGlobeStore((s) => s.activeTimestampMs);
   const timeTrackingMode = useGlobeStore((s) => s.timeTrackingMode);
 
-  // Stop parent window from scrolling up/down when mouse wheel is scrolled on 3D simulation
+  // Stop parent window from scrolling only when mouse wheel is scrolled directly on the 3D canvas simulation
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const preventWindowScroll = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      // Allow scrolling inside all UI panels, flyouts, dropdowns, and scrollable containers
+      if (
+        target?.closest(
+          '.overflow-y-auto, .overflow-y-scroll, .overflow-auto, [data-panel], .panel, [role="group"], [role="dialog"], [role="region"], input, select, textarea, button, form, [data-testid="landing-navigator-panel"]',
+        )
+      ) {
+        return;
+      }
       e.preventDefault();
     };
     el.addEventListener('wheel', preventWindowScroll, { passive: false });
@@ -275,7 +284,7 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
       data-ready={canvasReady && Boolean(textures) ? 'true' : 'false'}
       aria-label="3D lunar globe"
       className={`relative isolate bg-bg ${floating ? 'overflow-hidden' : ''} ${fullscreen.isFullscreen ? 'h-screen w-screen' : className}`}
-      style={{ overscrollBehavior: 'none', touchAction: 'none' }}
+      style={{ overscrollBehavior: 'none' }}
     >
       <CameraProbe />
       {stage}
@@ -415,6 +424,19 @@ export function LunarGlobe({ variant = 'full', className = '', showExploreLink =
               onClose={() => setShowLandingNavigator(false)}
             >
               <LandingNavigatorPanel />
+            </DraggablePanel>
+          )}
+
+          {showSatellitePanel && !showMissionFlyout && (
+            <DraggablePanel
+              id="cassini-telemetry"
+              title="Cassini Polar Reconnaissance"
+              dock="right"
+              widthClassName="w-80"
+              maxHeightClassName="max-h-[calc(100vh-10rem)]"
+              onClose={() => useGlobeStore.getState().toggleSatellitePanel(false)}
+            >
+              <CassiniSouthPolePanel />
             </DraggablePanel>
           )}
 

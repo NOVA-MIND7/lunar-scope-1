@@ -65,6 +65,7 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
   const customSelected = selectedSite?.category === 'custom' ? selectedSite : null;
 
   // Real-time and Astronomical state from store
+  const autoRotate = useGlobeStore((s) => s.autoRotate);
   const timeTrackingMode = useGlobeStore((s) => s.timeTrackingMode);
   const setActiveTimestampMs = useGlobeStore((s) => s.setActiveTimestampMs);
   const timeMultiplier = useGlobeStore((s) => s.timeMultiplier);
@@ -92,11 +93,12 @@ export const GlobeScene = memo(function GlobeScene({ textures, sites, sun }: { t
     const dt = Math.min(delta, 0.1);
 
     // 1. Advance time based on tracking mode
+    const isRunning = isTimePlaying && autoRotate;
     if (timeTrackingMode === 'realtime') {
-      if (isTimePlaying) {
+      if (isRunning) {
         currentSimTimeMsRef.current = Date.now();
       }
-    } else if (isTimePlaying) {
+    } else if (isRunning) {
       currentSimTimeMsRef.current += dt * timeMultiplier * 1000;
     }
 

@@ -121,11 +121,13 @@ export function DraggablePanel({
   return (
     <div
       ref={panelRef}
-      className={`absolute z-20 flex flex-col rounded-lg border border-line bg-bg-secondary/95 shadow-2xl backdrop-blur-md select-none ${dockClass} ${
-        isDragging ? 'shadow-cyan/25 ring-1 ring-cyan cursor-grabbing' : ''
+      onWheel={(e) => e.stopPropagation()}
+      className={`absolute z-20 flex flex-col rounded-lg border border-line bg-bg-secondary/95 shadow-2xl backdrop-blur-md ${dockClass} ${
+        isDragging ? 'shadow-cyan/25 ring-1 ring-cyan cursor-grabbing select-none' : ''
       } ${widthClassName}`}
       style={{
         transform: hasTransform ? `translate3d(${offset.x}px, ${offset.y}px, 0)` : undefined,
+        touchAction: 'auto',
       }}
     >
       {/* Draggable Header Bar */}
@@ -176,7 +178,7 @@ export function DraggablePanel({
 
       {/* Panel Body */}
       {!isCollapsed ? (
-        <div className={`overflow-y-auto p-2.5 ${maxHeightClassName}`}>
+        <div className={`overflow-y-auto overscroll-contain p-2.5 touch-auto ${maxHeightClassName}`}>
           {children}
         </div>
       ) : null}

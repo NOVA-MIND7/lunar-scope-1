@@ -264,9 +264,14 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   toggleEarthSatellites: () => set((s) => ({ showEarthSatellites: !s.showEarthSatellites })),
   toggleEarthOrbitPath: () => set((s) => ({ showEarthOrbitPath: !s.showEarthOrbitPath })),
   setSelectedEarthPath: (path) => set({ selectedEarthPath: path }),
-  toggleAutoRotate: () => set((s) => ({ autoRotate: !s.autoRotate })),
+  toggleAutoRotate: () =>
+    set((s) => {
+      const next = !s.autoRotate;
+      return { autoRotate: next, isTimePlaying: next };
+    }),
   setPlanetaryRotationSpeed: (speed) => set({ planetaryRotationSpeed: speed }),
   alignWithEarth: () => {
+    set({ focusTarget: 'earth' });
     get().issueCommand({ kind: 'focus', latitude_deg: 0, longitude_deg: 0, distance: 3.2 });
   },
   setFocusTarget: (target) => set({ focusTarget: target }),
@@ -274,6 +279,7 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   alignWithSun: (direction = [0.55, 0.25, 0.8]) => {
     const v = new Vector3(...direction).normalize();
     const coords = vector3ToLatLon(v);
+    set({ focusTarget: 'sun' });
     get().issueCommand({
       kind: 'focus',
       latitude_deg: coords.latitude_deg,
@@ -288,8 +294,12 @@ export const useGlobeStore = create<GlobeState & GlobeActions>()((set, get) => (
   setTimeTrackingMode: (mode) => set({ timeTrackingMode: mode }),
   setActiveTimestampMs: (ms) => set({ activeTimestampMs: ms }),
   setTimeMultiplier: (multiplier) => set({ timeMultiplier: multiplier }),
-  setIsTimePlaying: (playing) => set({ isTimePlaying: playing }),
-  toggleTimePlaying: () => set((s) => ({ isTimePlaying: !s.isTimePlaying })),
+  setIsTimePlaying: (playing) => set({ isTimePlaying: playing, autoRotate: playing }),
+  toggleTimePlaying: () =>
+    set((s) => {
+      const next = !s.isTimePlaying;
+      return { isTimePlaying: next, autoRotate: next };
+    }),
   setAstronomicalPhase: (phase) => set({ astronomicalPhase: phase }),
   setMoonSpinAngle: (angle) => set({ moonSpinAngle: angle }),
 }));
